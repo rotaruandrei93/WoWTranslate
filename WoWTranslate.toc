@@ -1,0 +1,14 @@
+## Interface: 11200
+## Title: WoWTranslate
+## Notes: Real-time translation for WoW 1.12 using local provider API keys
+## Version: 2.0
+## Author: WoWTranslate Team
+## SavedVariables: WoWTranslateDB WoWTranslateCache WoWTranslateDebugLog
+
+WoWTranslate_Glossary.lua
+WoWTranslate_Cache.lua
+WoWTranslate_API.lua
+WoWTranslate_Config.lua
+WoWTranslate_Minimap.lua
+WoWTranslate.lua
+WoWTranslate_NameTooltip.lua
