@@ -19,6 +19,7 @@ WoWTranslateGlossary["黑翼之巢"] = "Blackwing Lair"
 WoWTranslateGlossary["BWL"] = "Blackwing Lair"
 WoWTranslateGlossary["bwl"] = "Blackwing Lair"
 WoWTranslateGlossary["黑翼"] = "Blackwing Lair"
+WoWTranslateGlossary["黑E"] = "Blackwing Lair"
 
 -- Naxxramas
 WoWTranslateGlossary["纳克萨玛斯"] = "Naxxramas"
@@ -41,12 +42,26 @@ WoWTranslateGlossary["ony"] = "Onyxia"
 WoWTranslateGlossary["祖尔格拉布"] = "Zul'Gurub"
 WoWTranslateGlossary["ZG"] = "Zul'Gurub"
 WoWTranslateGlossary["zg"] = "Zul'Gurub"
+WoWTranslateGlossary["ZUG"] = "Zul'Gurub"
+WoWTranslateGlossary["zug"] = "Zul'Gurub"
 WoWTranslateGlossary["祖格"] = "Zul'Gurub"
+
+-- Lower Karazhan Halls
+WoWTranslateGlossary["卡拉赞下层"] = "Lower Karazhan Halls"
+WoWTranslateGlossary["卡下"] = "Lower Karazhan Halls"
+WoWTranslateGlossary["KLZ下层"] = "Lower Karazhan Halls"
+
+-- Emerald Sanctum
+WoWTranslateGlossary["翡翠圣殿"] = "Emerald Sanctum"
+WoWTranslateGlossary["翡翠"] = "Emerald Sanctum"
+WoWTranslateGlossary["翡翠绿龙"] = "Emerald Sanctum"
 
 -- Ruins of Ahn'Qiraj (AQ20)
 WoWTranslateGlossary["安其拉废墟"] = "Ruins of Ahn'Qiraj"
 WoWTranslateGlossary["AQ20"] = "Ruins of Ahn'Qiraj"
 WoWTranslateGlossary["aq20"] = "Ruins of Ahn'Qiraj"
+WoWTranslateGlossary["FX"] = "Ruins of Ahn'Qiraj"
+WoWTranslateGlossary["安其拉FX"] = "Ruins of Ahn'Qiraj"
 WoWTranslateGlossary["废墟"] = "AQ20"
 
 -- Temple of Ahn'Qiraj (AQ40)
@@ -54,6 +69,7 @@ WoWTranslateGlossary["安其拉神殿"] = "Temple of Ahn'Qiraj"
 WoWTranslateGlossary["AQ40"] = "Temple of Ahn'Qiraj"
 WoWTranslateGlossary["aq40"] = "Temple of Ahn'Qiraj"
 WoWTranslateGlossary["神殿"] = "AQ40"
+WoWTranslateGlossary["TAQ"] = "Temple of Ahn'Qiraj"
 WoWTranslateGlossary["安其拉"] = "Ahn'Qiraj"
 
 -- World Bosses
@@ -61,6 +77,8 @@ WoWTranslateGlossary["艾索雷葛斯"] = "Azuregos"
 WoWTranslateGlossary["蓝龙"] = "Azuregos"
 WoWTranslateGlossary["卡扎克"] = "Kazzak"
 WoWTranslateGlossary["绿龙"] = "Dragons of Nightmare"
+WoWTranslateGlossary["龙虾"] = "Cla'ckora"
+WoWTranslateGlossary["卡拉赞黑暗掠夺者"] = "Dark Reaver of Karazhan"
 
 -- ============================================================================
 -- DUNGEONS (50+ entries)
@@ -70,6 +88,13 @@ WoWTranslateGlossary["血色修道院"] = "Scarlet Monastery"
 WoWTranslateGlossary["SM"] = "Scarlet Monastery"
 WoWTranslateGlossary["sm"] = "Scarlet Monastery"
 WoWTranslateGlossary["血色"] = "Scarlet Monastery"
+WoWTranslateGlossary["XS"] = "Scarlet Monastery"
+WoWTranslateGlossary["血色图书馆"] = "Scarlet Monastery lib"
+WoWTranslateGlossary["血色墓地"] = "Scarlet Monastery Graveyard"
+WoWTranslateGlossary["血色武器库"] = "Scarlet Monastery Arm"
+WoWTranslateGlossary["血色教堂"] = "Scarlet Monastery Cathedral"
+WoWTranslateGlossary["血色三本"] = "Scarlet Monastery Cathedral& Arm &Lib"
+
 
 -- Dire Maul
 WoWTranslateGlossary["厄运之槌"] = "Dire Maul"
@@ -80,6 +105,11 @@ WoWTranslateGlossary["DME"] = "Dire Maul East"
 WoWTranslateGlossary["DMW"] = "Dire Maul West"
 WoWTranslateGlossary["DMN"] = "Dire Maul North"
 WoWTranslateGlossary["DM贡品"] = "Dire Maul Tribute"
+WoWTranslateGlossary["厄运东"] = "Dire Maul East"
+WoWTranslateGlossary["厄运西"] = "Dire Maul West"
+WoWTranslateGlossary["厄运北"] = "Dire Maul North"
+WoWTranslateGlossary["厄运完美贡品"] = "Dire Maul Tribute"
+WoWTranslateGlossary["厄运声望队"] = "Dire Maul rep farm group"
 
 -- Stratholme
 WoWTranslateGlossary["斯坦索姆"] = "Stratholme"
@@ -89,30 +119,42 @@ WoWTranslateGlossary["斯坦"] = "Stratholme"
 WoWTranslateGlossary["死亡骑士"] = "Stratholme UD"
 WoWTranslateGlossary["活面"] = "Stratholme Live"
 WoWTranslateGlossary["死面"] = "Stratholme Undead"
+WoWTranslateGlossary["STSM"] = "Stratholme"
+WoWTranslateGlossary["STSM 血色区"] = "Stratholme Live"
+WoWTranslateGlossary["STSM血色区"] = "Stratholme Live"
+WoWTranslateGlossary["STSM DK区"] = "Stratholme Undead"
+WoWTranslateGlossary["STSM DK签马"] = "Stratholme Undead"
 
 -- Scholomance
 WoWTranslateGlossary["通灵学院"] = "Scholomance"
 WoWTranslateGlossary["SCHOLO"] = "Scholomance"
 WoWTranslateGlossary["scholo"] = "Scholomance"
 WoWTranslateGlossary["通灵"] = "Scholomance"
+WoWTranslateGlossary["TL"] = "Scholomance"
 
 -- Blackrock Depths
 WoWTranslateGlossary["黑石深渊"] = "Blackrock Depths"
 WoWTranslateGlossary["BRD"] = "Blackrock Depths"
 WoWTranslateGlossary["brd"] = "Blackrock Depths"
 WoWTranslateGlossary["黑深"] = "Blackrock Depths"
+WoWTranslateGlossary["大帝路线"] = "BRD Emperor run"
+WoWTranslateGlossary["酒吧路线"] = "BRD Bar run"
+WoWTranslateGlossary["深渊跳火大帝"] = "BRD lava jump to Emperor"
 
 -- Lower Blackrock Spire
 WoWTranslateGlossary["黑石塔下层"] = "Lower Blackrock Spire"
 WoWTranslateGlossary["LBRS"] = "Lower Blackrock Spire"
 WoWTranslateGlossary["lbrs"] = "Lower Blackrock Spire"
 WoWTranslateGlossary["下层"] = "LBRS"
+WoWTranslateGlossary["黑下"] = "Lower Blackrock Spire"
 
 -- Upper Blackrock Spire
 WoWTranslateGlossary["黑石塔上层"] = "Upper Blackrock Spire"
 WoWTranslateGlossary["UBRS"] = "Upper Blackrock Spire"
 WoWTranslateGlossary["ubrs"] = "Upper Blackrock Spire"
 WoWTranslateGlossary["上层"] = "UBRS"
+WoWTranslateGlossary["黑上"] = "UBRS"
+WoWTranslateGlossary["黑上1+尾王"] = "UBRS First + Final Boss"
 
 -- Deadmines
 WoWTranslateGlossary["死亡矿井"] = "Deadmines"
@@ -131,6 +173,9 @@ WoWTranslateGlossary["影牙城堡"] = "Shadowfang Keep"
 WoWTranslateGlossary["SFK"] = "Shadowfang Keep"
 WoWTranslateGlossary["sfk"] = "Shadowfang Keep"
 WoWTranslateGlossary["影牙"] = "Shadowfang Keep"
+
+-- Stocks 24~30lvl
+WoWTranslateGlossary["小监狱"] = "Stocks"
 
 -- Gnomeregan
 WoWTranslateGlossary["诺莫瑞根"] = "Gnomeregan"
@@ -158,11 +203,13 @@ WoWTranslateGlossary["祖尔法拉克"] = "Zul'Farrak"
 WoWTranslateGlossary["ZF"] = "Zul'Farrak"
 WoWTranslateGlossary["zf"] = "Zul'Farrak"
 WoWTranslateGlossary["祖法"] = "Zul'Farrak"
+WoWTranslateGlossary["ZR"] = "Zul'Farrak"
 
 -- Maraudon
 WoWTranslateGlossary["玛拉顿"] = "Maraudon"
 WoWTranslateGlossary["MARA"] = "Maraudon"
 WoWTranslateGlossary["mara"] = "Maraudon"
+WoWTranslateGlossary["MLD"] = "Maraudon"
 
 -- Sunken Temple
 WoWTranslateGlossary["沉没的神庙"] = "Sunken Temple"
@@ -174,6 +221,7 @@ WoWTranslateGlossary["神庙"] = "Sunken Temple"
 WoWTranslateGlossary["怒焰裂谷"] = "Ragefire Chasm"
 WoWTranslateGlossary["RFC"] = "Ragefire Chasm"
 WoWTranslateGlossary["rfc"] = "Ragefire Chasm"
+WoWTranslateGlossary["NY"] = "Ragefire Chasm"
 
 -- Stockades
 WoWTranslateGlossary["监狱"] = "Stockades"
@@ -184,6 +232,39 @@ WoWTranslateGlossary["黑暗深渊"] = "Blackfathom Deeps"
 WoWTranslateGlossary["BFD"] = "Blackfathom Deeps"
 WoWTranslateGlossary["bfd"] = "Blackfathom Deeps"
 
+-- Crescent Grove
+WoWTranslateGlossary["新月林地"] = "Crescent Grove"
+
+-- The Stockade
+WoWTranslateGlossary["暴风城大监狱"] = "The Stockade"
+WoWTranslateGlossary["大监狱"] = "The Stockade"
+
+-- The Hateforge
+WoWTranslateGlossary["仇恨熔炉"] = "The Hateforge"
+WoWTranslateGlossary["采石场"] = "The Hateforge"
+
+-- The Black Morass
+WoWTranslateGlossary["BM"] = "The Black Morass"
+WoWTranslateGlossary["黑暗沼泽"] = "The Black Morass"
+WoWTranslateGlossary["时光"] = "The Black Morass"
+WoWTranslateGlossary["时光5+2"] = "The Black Morass : First 5 bosses, 1 sand each; last 2 bosses, all Need. "
+
+-- Dragonmaw Retreat
+WoWTranslateGlossary["龙吼"] = "Dragonmaw Retreat"
+WoWTranslateGlossary["龙吼居所"] = "Dragonmaw Retreat"
+
+-- Gilneas
+WoWTranslateGlossary["吉尔尼斯"] = "Gilneas"
+
+-- Stormwreck Ruins
+WoWTranslateGlossary["风暴废墟"] = "Stormwreck Ruins"
+
+-- Karazhan Crypts
+WoWTranslateGlossary["卡拉赞墓地"] = "Karazhan Crypts"
+WoWTranslateGlossary["卡拉赞墓穴"] = "Karazhan Crypts"
+WoWTranslateGlossary["KLZ墓地"] = "Karazhan Crypts"
+WoWTranslateGlossary["KLZ墓穴"] = "Karazhan Crypts"
+
 -- ============================================================================
 -- CLASSES (40+ entries)
 -- ============================================================================
@@ -193,6 +274,7 @@ WoWTranslateGlossary["ZS"] = "Warrior"
 WoWTranslateGlossary["zs"] = "Warrior"
 WoWTranslateGlossary["防战"] = "Prot Warrior"
 WoWTranslateGlossary["狂暴战"] = "Fury Warrior"
+WoWTranslateGlossary["KBZ"] = "Fury Warrior"
 WoWTranslateGlossary["武器战"] = "Arms Warrior"
 WoWTranslateGlossary["坦克战士"] = "Tank Warrior"
 
@@ -202,8 +284,11 @@ WoWTranslateGlossary["QS"] = "Paladin"
 WoWTranslateGlossary["qs"] = "Paladin"
 WoWTranslateGlossary["骑士"] = "Paladin"
 WoWTranslateGlossary["奶骑"] = "Holy Paladin"
+WoWTranslateGlossary["NQ"] = "Holy Paladin"
 WoWTranslateGlossary["防骑"] = "Prot Paladin"
+WoWTranslateGlossary["FQ"] = "Prot Paladin"
 WoWTranslateGlossary["惩戒骑"] = "Ret Paladin"
+WoWTranslateGlossary["CJQ"] = "Ret Paladin"
 
 -- Hunter
 WoWTranslateGlossary["猎人"] = "Hunter"
@@ -261,10 +346,13 @@ WoWTranslateGlossary["XD"] = "Druid"
 WoWTranslateGlossary["xd"] = "Druid"
 WoWTranslateGlossary["小德"] = "Druid"
 WoWTranslateGlossary["奶德"] = "Resto Druid"
+WoWTranslateGlossary["ND"] = "Resto Druid"
 WoWTranslateGlossary["熊德"] = "Feral Druid (Bear)"
 WoWTranslateGlossary["猫德"] = "Feral Druid (Cat)"
+WoWTranslateGlossary["野德"] = "Feral Druid (Cat)"
 WoWTranslateGlossary["鸟德"] = "Balance Druid"
 WoWTranslateGlossary["平衡德"] = "Balance Druid"
+WoWTranslateGlossary["鹌鹑"] = "Balance Druid"
 
 -- ============================================================================
 -- BOSSES (80+ entries)
@@ -272,6 +360,7 @@ WoWTranslateGlossary["平衡德"] = "Balance Druid"
 -- Molten Core Bosses
 WoWTranslateGlossary["拉格纳罗斯"] = "Ragnaros"
 WoWTranslateGlossary["大螺丝"] = "Ragnaros"
+WoWTranslateGlossary["老十"] = "Ragnaros"
 WoWTranslateGlossary["炎魔"] = "Ragnaros"
 WoWTranslateGlossary["螺丝"] = "Ragnaros"
 WoWTranslateGlossary["鲁西弗隆"] = "Lucifron"
@@ -282,6 +371,7 @@ WoWTranslateGlossary["沙斯拉尔"] = "Shazzrah"
 WoWTranslateGlossary["迦顿男爵"] = "Baron Geddon"
 WoWTranslateGlossary["萨弗隆先驱者"] = "Sulfuron Harbinger"
 WoWTranslateGlossary["管理者埃克索图斯"] = "Majordomo Executus"
+WoWTranslateGlossary["老九"] = "Majordomo Executus"
 WoWTranslateGlossary["大管家"] = "Majordomo Executus"
 
 -- Blackwing Lair Bosses
@@ -342,6 +432,7 @@ WoWTranslateGlossary["哈卡"] = "Hakkar"
 WoWTranslateGlossary["血神"] = "Hakkar"
 WoWTranslateGlossary["高阶祭司"] = "High Priest"
 WoWTranslateGlossary["金度"] = "Jin'do the Hexxer"
+WoWTranslateGlossary["龙虎金"] = "Bloodlord Mandokir and High Priestess Arlokk and Jin'do the Hexxer"
 
 -- Onyxia
 WoWTranslateGlossary["奥妮克希亚"] = "Onyxia"
@@ -355,9 +446,42 @@ WoWTranslateGlossary["找组"] = "LFG"
 WoWTranslateGlossary["组队"] = "LFG"
 WoWTranslateGlossary["收人"] = "LFM"
 WoWTranslateGlossary["招人"] = "LFM"
+WoWTranslateGlossary["来人"] = "LFM"
 WoWTranslateGlossary["缺人"] = "Need more"
 WoWTranslateGlossary["满了"] = "Full"
 WoWTranslateGlossary["组满"] = "Group full"
+WoWTranslateGlossary["速刷"] = "fast run"
+WoWTranslateGlossary["T"] = "Tank"
+WoWTranslateGlossary["坦克"] = "Tank"
+WoWTranslateGlossary["N"] = "Healer"
+WoWTranslateGlossary["奶妈"] = "Healer"
+WoWTranslateGlossary["D"] = "Dps"
+WoWTranslateGlossary["输出"] = "Dps"
+WoWTranslateGlossary["TND"] = "Tank / healer / Dps"
+WoWTranslateGlossary["TD"] = "Tank / Dps"
+WoWTranslateGlossary["T D"] = "Tank / Dps"
+WoWTranslateGlossary["TN"] = "Tank / healer"
+WoWTranslateGlossary["T N"] = "Tank / healer"
+WoWTranslateGlossary["ND"] = "healer / Dps"
+WoWTranslateGlossary["N D"] = "healer / Dps"
+WoWTranslateGlossary["AA队"] = "AoE group"
+WoWTranslateGlossary["菜刀队"] = "melee group"
+WoWTranslateGlossary["4Q1"] = "LF1M"
+WoWTranslateGlossary["4=1"] = "LF1M"
+WoWTranslateGlossary["3=2"] = "LF2M"
+WoWTranslateGlossary["3Q2"] = "LF2M"
+WoWTranslateGlossary["2=3"] = "LF3M"
+WoWTranslateGlossary["4 = 1"] = "LF1M"
+WoWTranslateGlossary["3 = 2"] = "LF2M"
+WoWTranslateGlossary["2 = 3"] = "LF3M"
+WoWTranslateGlossary["海山螺丝厂"] = "Hyjal Shard Farm"
+WoWTranslateGlossary["海山打螺丝"] = "Hyjal Shard Farm"
+WoWTranslateGlossary["救元帅"] = "BRD Windsor quest"
+WoWTranslateGlossary["9元帅"] = "BRD Windsor quest"
+WoWTranslateGlossary["能拉"] = "can summon"
+WoWTranslateGlossary["全通"] = "full run"
+WoWTranslateGlossary["尾王"] = "last boss"
+WoWTranslateGlossary["宝珠队"] = "Strat Live Orbs Farm run"
 
 -- GDKP/Loot
 WoWTranslateGlossary["金团"] = "GDKP"
@@ -371,8 +495,29 @@ WoWTranslateGlossary["分G"] = "GDKP split"
 WoWTranslateGlossary["底价"] = "Min bid"
 WoWTranslateGlossary["加价"] = "Bid increment"
 WoWTranslateGlossary["拍卖"] = "Auction"
+WoWTranslateGlossary["许愿"] = "SR"
+WoWTranslateGlossary["XY"] = "SR"
+WoWTranslateGlossary["许愿+4"] = "SR + 4 points — You can reserve one item as your SR, and the 4 points can be used to bid on non-SR items."
+WoWTranslateGlossary["5+4"] = "5+4: SR items can be bid 5–9 points; same SR = no roll, higher remaining points wins; 4 extra points can be used on non-SR items."
+WoWTranslateGlossary["出分"] = "Bid"
+WoWTranslateGlossary["固定团"] = "static raid team"
+WoWTranslateGlossary["修车"] = "Remaining Bosses Cleanup"
+WoWTranslateGlossary["尾团"] = "last chance run"
+WoWTranslateGlossary["尾CD"] = "last chance run"
+WoWTranslateGlossary["末班车"] = "last chance run"
+WoWTranslateGlossary["双色球"] = "2 of each class"
 
 -- Raid Actions
+WoWTranslateGlossary["骷髅"] = "Skull"
+WoWTranslateGlossary["叉子"] = "Cross / X"
+WoWTranslateGlossary["星星"] = "Star"
+WoWTranslateGlossary["三角"] = "Diamond"
+WoWTranslateGlossary["菱形"] = "Purple"
+WoWTranslateGlossary["月亮"] = "Moon"
+WoWTranslateGlossary["方块"] = "Square"
+WoWTranslateGlossary["骷髅"] = "Skull"
+WoWTranslateGlossary["驱散"] = "驱散"
+WoWTranslateGlossary["防恐"] = "Fear Ward"
 WoWTranslateGlossary["灭团"] = "Wipe"
 WoWTranslateGlossary["团灭"] = "Wipe"
 WoWTranslateGlossary["灭了"] = "Wiped"
@@ -390,6 +535,7 @@ WoWTranslateGlossary["传送门"] = "Portal"
 WoWTranslateGlossary["拉人"] = "Summon"
 
 -- Ready Checks
+WoWTranslateGlossary["加buff"] = "buff up"
 WoWTranslateGlossary["准备好了"] = "Ready"
 WoWTranslateGlossary["好了"] = "Ready"
 WoWTranslateGlossary["OK"] = "OK"
@@ -408,6 +554,7 @@ WoWTranslateGlossary["战复"] = "Battle res"
 WoWTranslateGlossary["跑尸"] = "Corpse run"
 WoWTranslateGlossary["GY"] = "Graveyard"
 WoWTranslateGlossary["gy"] = "Graveyard"
+WoWTranslateGlossary["救人"] = "Res"
 
 -- ============================================================================
 -- WORLD BUFFS (15+ entries)
@@ -449,6 +596,7 @@ WoWTranslateGlossary["T2.5"] = "Tier 2.5"
 WoWTranslateGlossary["T3"] = "Tier 3"
 WoWTranslateGlossary["套装"] = "Set"
 WoWTranslateGlossary["毕业装"] = "BiS gear"
+WoWTranslateGlossary["装等"] = "item level"
 
 -- Gear Quality
 WoWTranslateGlossary["紫装"] = "Epic"
@@ -464,12 +612,14 @@ WoWTranslateGlossary["药水"] = "Potion"
 WoWTranslateGlossary["合剂"] = "Flask"
 WoWTranslateGlossary["精炼"] = "Elixir"
 WoWTranslateGlossary["食物BUFF"] = "Food buff"
+WoWTranslateGlossary["烹饪"] = "Food buff"
 WoWTranslateGlossary["火抗药"] = "Fire Resist Potion"
 WoWTranslateGlossary["暗抗药"] = "Shadow Resist Potion"
 WoWTranslateGlossary["自然抗"] = "Nature Resist"
 WoWTranslateGlossary["火焰之油"] = "Fire Oil"
 WoWTranslateGlossary["附魔"] = "Enchant"
 WoWTranslateGlossary["宝石"] = "Gem"
+WoWTranslateGlossary["双药"] = "Double consumables required."
 
 -- ============================================================================
 -- LOCATIONS (50+ entries)
@@ -503,20 +653,31 @@ WoWTranslateGlossary["brm"] = "Blackrock Mountain"
 WoWTranslateGlossary["燃烧平原"] = "Burning Steppes"
 WoWTranslateGlossary["灼热峡谷"] = "Searing Gorge"
 WoWTranslateGlossary["东瘟疫之地"] = "Eastern Plaguelands"
+WoWTranslateGlossary["东瘟疫"] = "Eastern Plaguelands"
 WoWTranslateGlossary["EPL"] = "Eastern Plaguelands"
 WoWTranslateGlossary["epl"] = "Eastern Plaguelands"
 WoWTranslateGlossary["西瘟疫之地"] = "Western Plaguelands"
+WoWTranslateGlossary["西瘟疫"] = "Western Plaguelands"
 WoWTranslateGlossary["WPL"] = "Western Plaguelands"
 WoWTranslateGlossary["wpl"] = "Western Plaguelands"
 WoWTranslateGlossary["费伍德森林"] = "Felwood"
 WoWTranslateGlossary["冬泉谷"] = "Winterspring"
 WoWTranslateGlossary["希利苏斯"] = "Silithus"
+WoWTranslateGlossary["XLSS"] = "Silithus"
 WoWTranslateGlossary["荆棘谷"] = "Stranglethorn Vale"
+WoWTranslateGlossary["JJG"] = "Stranglethorn Vale"
 WoWTranslateGlossary["STV"] = "Stranglethorn Vale"
 WoWTranslateGlossary["stv"] = "Stranglethorn Vale"
 WoWTranslateGlossary["塔纳利斯"] = "Tanaris"
 WoWTranslateGlossary["加基森"] = "Gadgetzan"
 WoWTranslateGlossary["艾萨拉"] = "Azshara"
+WoWTranslateGlossary["诅咒之地"] = "Blasted Lands"
+WoWTranslateGlossary["逆风小径"] = "Deadwind Pass"
+WoWTranslateGlossary["海山"] = "Hyjal"
+WoWTranslateGlossary["海加尔山"] = "Hyjal"
+WoWTranslateGlossary["艾萨拉"] = "Azshara"
+WoWTranslateGlossary["安戈洛环形山"] = "Un'Goro Crater"
+
 
 -- ============================================================================
 -- STATS & ATTRIBUTES (30+ entries)
@@ -527,6 +688,7 @@ WoWTranslateGlossary["命中率"] = "Hit %"
 WoWTranslateGlossary["攻强"] = "AP"
 WoWTranslateGlossary["攻击强度"] = "Attack Power"
 WoWTranslateGlossary["法强"] = "Spell Power"
+WoWTranslateGlossary["法伤"] = "Spell Power"
 WoWTranslateGlossary["法术强度"] = "Spell Power"
 WoWTranslateGlossary["治疗强度"] = "Healing Power"
 WoWTranslateGlossary["火抗"] = "Fire Resist"
@@ -544,10 +706,11 @@ WoWTranslateGlossary["hps"] = "HPS"
 WoWTranslateGlossary["TPS"] = "TPS"
 WoWTranslateGlossary["tps"] = "TPS"
 WoWTranslateGlossary["仇恨"] = "Threat"
-WoWTranslateGlossary["OT"] = "OT (Off-tank)"
+WoWTranslateGlossary["OT"] = "pulled aggro"
 WoWTranslateGlossary["MT"] = "MT (Main Tank)"
 WoWTranslateGlossary["主坦"] = "Main Tank"
 WoWTranslateGlossary["副坦"] = "Off-Tank"
+WoWTranslateGlossary["2T"] = "Off-Tank"
 
 -- ============================================================================
 -- COMMON SLANG & EXPRESSIONS (60+ entries)
@@ -653,9 +816,11 @@ WoWTranslateGlossary["剥皮"] = "Skinning"
 WoWTranslateGlossary["锻造"] = "Blacksmithing"
 WoWTranslateGlossary["工程"] = "Engineering"
 WoWTranslateGlossary["炼金"] = "Alchemy"
+WoWTranslateGlossary["奥金CD"] = "Arcanite Transmute CD"
 WoWTranslateGlossary["裁缝"] = "Tailoring"
 WoWTranslateGlossary["制皮"] = "Leatherworking"
 WoWTranslateGlossary["附魔"] = "Enchanting"
+WoWTranslateGlossary["代工"] = "Crafter"
 
 -- ============================================================================
 -- GLOSSARY LOOKUP FUNCTIONS
