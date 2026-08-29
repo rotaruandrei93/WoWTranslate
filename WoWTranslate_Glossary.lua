@@ -669,9 +669,62 @@ function WoWTranslate_CheckGlossaryExact(text)
     return nil, nil
 end
 
+-- Returns true if `str` is a single character - either one ASCII
+-- letter (e.g. "g") or one 3-byte UTF-8 CJK ideograph (e.g. "金") -
+-- as opposed to a genuine multi-character abbreviation like "MC" or
+-- "AFK". Vanilla WoW's Lua 5.0 has no utf8 library, so this is done
+-- with a raw byte check: CJK Unified Ideographs are always encoded as
+-- a 3-byte UTF-8 sequence whose lead byte is 0xE0 or higher, while
+-- every ASCII character is a single byte below 0x80.
+local function IsSingleCharacterEntry(str)
+    local len = string.len(str)
+    if len == 1 then
+        return true
+    end
+    if len == 3 then
+        local leadByte = string.byte(str, 1)
+        return leadByte ~= nil and leadByte >= 0xE0
+    end
+    return false
+end
+
+-- Replace every non-overlapping literal occurrence of `needle` in
+-- `haystack` with `replacement`. This is a plain byte-for-byte
+-- substring replacement (no Lua pattern matching, no "%"-escaping of
+-- the replacement string), so it behaves 100% predictably no matter
+-- what characters show up in Chinese chat text or English glossary
+-- values.
+local function ReplaceAllLiteral(haystack, needle, replacement)
+    local pieces = {}
+    local pos = 1
+    while true do
+        local startPos, endPos = string.find(haystack, needle, pos, true)
+        if not startPos then
+            table.insert(pieces, string.sub(haystack, pos))
+            break
+        end
+        table.insert(pieces, string.sub(haystack, pos, startPos - 1))
+        table.insert(pieces, replacement)
+        pos = endPos + 1
+    end
+    return table.concat(pieces)
+end
+
 -- Check glossary for partial matches and replace terms in text
 function WoWTranslate_CheckGlossaryPartial(text)
-    local translated = text
+    -- Two-phase substitution. Phase 1 swaps every matched glossary
+    -- term for a unique placeholder token (never for its English text
+    -- directly). Phase 2 swaps the placeholders for their English
+    -- text at the very end. This guarantees a glossary key can never
+    -- match text that an *earlier* glossary substitution produced -
+    -- e.g. without this, "血色修道院" -> "Scarlet Monastery" followed
+    -- by the separate entry "st" -> "Sunken Temple" would match the
+    -- "st" inside "Mona-st-ery" and mangle it into
+    -- "Scarlet MonaSunken Templeery". With placeholders, "Monastery"
+    -- literally doesn't exist yet when other keys are being matched,
+    -- so it can't be matched into.
+    local working = text
+    local placeholders = {}
     local hasMatch = false
 
     -- Sort keys by length (longest first) to avoid partial replacements
@@ -682,18 +735,40 @@ function WoWTranslate_CheckGlossaryPartial(text)
     table.sort(sortedKeys, function(a, b) return string.len(a) > string.len(b) end)
 
     for _, chinese in ipairs(sortedKeys) do
-        local english = WoWTranslateGlossary[chinese]
-        if string.find(translated, chinese, 1, true) then
-            translated = string.gsub(translated, chinese, english)
-            hasMatch = true
+        -- Skip lone single-character entries (e.g. "金" -> "Gold",
+        -- or "g" -> "Gold") in substring matching. A single character
+        -- is very likely to also appear as a fragment inside unrelated
+        -- longer words - either a Chinese compound like "炼金"/"附魔",
+        -- or an English word (e.g. "Engineering", which contains "g").
+        -- These entries are still available via
+        -- WoWTranslate_CheckGlossaryExact, so a chat message that is
+        -- *only* that single character (e.g. someone just types "金")
+        -- is still translated correctly.
+        if not IsSingleCharacterEntry(chinese) then
+            if string.find(working, chinese, 1, true) then
+                local english = WoWTranslateGlossary[chinese]
+                local slot = table.getn(placeholders) + 1
+                placeholders[slot] = english
+                -- \1 (byte 0x01) is a control character that never
+                -- appears in normal chat text, so it's a safe,
+                -- collision-free placeholder delimiter.
+                local placeholder = "\1" .. slot .. "\1"
+                working = ReplaceAllLiteral(working, chinese, placeholder)
+                hasMatch = true
+            end
         end
     end
 
-    if hasMatch then
-        return translated, "glossary_partial"
+    if not hasMatch then
+        return nil, nil
     end
 
-    return nil, nil
+    for slot, english in ipairs(placeholders) do
+        local placeholder = "\1" .. slot .. "\1"
+        working = ReplaceAllLiteral(working, placeholder, english)
+    end
+
+    return working, "glossary_partial"
 end
 
 -- Main glossary check function - tries exact first, then partial

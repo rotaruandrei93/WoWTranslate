@@ -124,6 +124,12 @@ local defaults = {
         CHANNEL = true,
     },
     outgoingPrefix = "[Translated by WoWTranslate]",
+    incomingPrefix = "[WT]",
+    -- RRGGBB (no leading "#", no alpha) used to color just the [WT]
+    -- tag so it's easy to spot at a glance, independent of whatever
+    -- color the chat channel itself uses (guild green, world/yellow,
+    -- yell red, etc). Bright cyan reads clearly against all of those.
+    incomingTagColor = "00FFFF",
     disableWhileAfk = true,
     translateSystemMessages = false,  -- Don't translate system msgs, emotes, NPC speech
     -- Language settings (any-to-any translation)
@@ -707,6 +713,164 @@ local function ReconstructMessage(segments, translatedText)
 end
 
 -- ============================================================================
+-- HEADER / BODY SPLIT (incoming)
+-- ============================================================================
+-- By the time a chat line reaches AddMessage, the client has already baked
+-- the channel tag and sender name into the same string, e.g.
+-- "[Guild] [Ironshield]: some message" or "Ironshield whispers: hi". Handing
+-- that whole string to the translation API lets it reword the tag/name
+-- along with the message -- that's what was turning "[Guild]" into
+-- "[Golduild]". Split off everything up to and including the first ": "
+-- and only translate what comes after it; the header (which may itself
+-- contain the sender's clickable name hyperlink) is left untouched.
+local function SplitChatHeaderAndBody(text)
+    local pos = string.find(text, ": ", 1, true)
+    if not pos then
+        return "", text
+    end
+    local header = string.sub(text, 1, pos + 1)
+    local body = string.sub(text, pos + 2)
+    if body == "" then
+        return "", text
+    end
+    return header, body
+end
+
+local DEFAULT_INCOMING_TAG = "[WT]"
+local DEFAULT_INCOMING_TAG_COLOR = "00FFFF"
+
+-- Returns true if `str` looks like exactly 6 hex digits (RRGGBB), so
+-- we never feed something malformed into a |c color escape code.
+local function IsValidHexColor(str)
+    if not str or string.len(str) ~= 6 then
+        return false
+    end
+    return string.find(str, "^%x%x%x%x%x%x$") ~= nil
+end
+
+-- Unlike the outgoing prefix (which gets sent in the actual chat message,
+-- so it needs to be readable in the recipient's language), this tag is
+-- purely a local marker -- it's never transmitted, just shown to you, like
+-- the old addon's "[WT][5. World][Playername]: message" style. So it's
+-- short and fixed, not looked up per target language.
+--
+-- The whole chat line's default color comes from the r/g/b the client
+-- passes to AddMessage (guild green, world/yellow, yell red, etc), so
+-- without an explicit color code the tag just blends into that. We
+-- wrap it in its own |cAARRGGBB ... |r color code so it always reads
+-- clearly regardless of which channel the message came from.
+local function GetIncomingTag()
+    local tagText = (WoWTranslateDB and WoWTranslateDB.incomingPrefix) or DEFAULT_INCOMING_TAG
+    local color = (WoWTranslateDB and WoWTranslateDB.incomingTagColor) or DEFAULT_INCOMING_TAG_COLOR
+    if not IsValidHexColor(color) then
+        color = DEFAULT_INCOMING_TAG_COLOR
+    end
+    return "|cFF" .. color .. tagText .. "|r"
+end
+
+-- Translates just the message body (header/sender tag already split off by
+-- the caller) and re-assembles "[WT] + header + translated body" for
+-- display. Shared by the live AddMessage hook below
+-- and the item-link cache poller further down, since both need identical
+-- treatment once they have a header/body pair to work with.
+local function TranslateIncomingBody(header, body, originalText, frame, originalAddMessage, r, g, b, id, holdTime)
+    local segments = SplitIntoSegments(body)
+
+    DebugLog("Segments found:", table.getn(segments))
+    for idx, seg in ipairs(segments) do
+        DebugLog("  Seg", idx, seg.type, ":", string.sub(seg.content, 1, 60))
+    end
+
+    -- Check if there's Chinese text to translate (outside hyperlinks)
+    if not HasTranslatableContent(segments) then
+        -- All Chinese is inside hyperlinks - show original, no tag needed
+        originalAddMessage(frame, originalText, r, g, b, id, holdTime)
+        return
+    end
+
+    -- Build text to send to translation API
+    local textToTranslate = BuildTranslatableText(segments)
+
+    if WoWTranslate_CheckGlossary then
+        local glossaryText, glossaryType = WoWTranslate_CheckGlossary(textToTranslate)
+        if glossaryText then
+            DebugLog("Glossary applied:", glossaryType)
+            textToTranslate = glossaryText
+
+            if not ContainsSourceLanguage(textToTranslate) then
+                local finalBody = ReconstructMessage(segments, textToTranslate)
+                WoWTranslate_CacheSave(body, finalBody)
+                originalAddMessage(frame, GetIncomingTag() .. header .. finalBody, r, g, b, id, holdTime)
+                return
+            end
+        end
+    end
+
+    DebugLog("To translate:", string.sub(textToTranslate, 1, 50))
+
+    -- Check cache first (keyed on the message body only, so identical
+    -- messages from different senders/channels can still hit)
+    local cached, found = WoWTranslate_CacheGet(body)
+    if found then
+        DebugLog("Cache hit")
+        WoWTranslate_API.TrackCacheHit(string.len(body))
+        originalAddMessage(frame, GetIncomingTag() .. header .. cached, r, g, b, id, holdTime)
+        return
+    end
+
+    -- Need API translation
+    if WoWTranslate_API and WoWTranslate_API.IsAvailable() then
+        messageCounter = messageCounter + 1
+        local msgId = tostring(messageCounter)
+
+        pendingMessages[msgId] = {
+            frame = frame,
+            originalAddMessage = originalAddMessage,
+            originalText = originalText,
+            header = header,
+            body = body,
+            segments = segments,
+            r = r,
+            g = g,
+            b = b,
+            id = id,
+            holdTime = holdTime,
+            timestamp = GetTime()
+        }
+
+        DebugLog("Queued for API:", msgId)
+
+        WoWTranslate_API.Translate(textToTranslate, function(translation, err)
+            local pending = pendingMessages[msgId]
+            if pending then
+                pendingMessages[msgId] = nil
+
+                if translation then
+                    DebugLog("API returned:", string.sub(translation, 1, 50))
+
+                    -- Reconstruct with original hyperlinks
+                    local finalBody = ReconstructMessage(pending.segments, translation)
+
+                    DebugLog("Final:", string.sub(finalBody, 1, 100))
+
+                    WoWTranslate_CacheSave(pending.body, finalBody)
+                    pending.originalAddMessage(pending.frame, GetIncomingTag() .. pending.header .. finalBody, pending.r, pending.g, pending.b, pending.id, pending.holdTime)
+                else
+                    DebugLog("API error:", err)
+                    pending.originalAddMessage(pending.frame, pending.originalText, pending.r, pending.g, pending.b, pending.id, pending.holdTime)
+                end
+            end
+        end)
+
+        return
+    else
+        DebugLog("DLL not available")
+    end
+
+    originalAddMessage(frame, originalText, r, g, b, id, holdTime)
+end
+
+-- ============================================================================
 -- CHAT FRAME HOOKING
 -- ============================================================================
 
@@ -758,8 +922,14 @@ local function HookChatFrames()
                 -- Log original message for debugging
                 DebugLog("ORIGINAL MSG:", string.sub(text, 1, 150))
 
+                -- Split off the channel tag / sender name the client already
+                -- baked into this line -- only the message body gets sent
+                -- for translation, so "[Guild]"/"[Ironshield]" etc. can
+                -- never come back reworded.
+                local header, body = SplitChatHeaderAndBody(text)
+
                 -- Check for item links and ensure items are cached before processing
-                local itemIds = ExtractItemIds(text)
+                local itemIds = ExtractItemIds(body)
                 if table.getn(itemIds) > 0 then
                     -- Pass true to trigger cache via SetHyperlink for uncached items
                     local allCached, uncachedIds = CheckItemCache(itemIds, true)
@@ -775,6 +945,8 @@ local function HookChatFrames()
                             frame = self,
                             originalAddMessage = frameOriginalAddMessage,
                             text = text,
+                            header = header,
+                            body = body,
                             itemIds = itemIds,
                             r = r,
                             g = g,
@@ -788,105 +960,7 @@ local function HookChatFrames()
                     end
                 end
 
-                -- Split into segments (text and hyperlinks)
-                local segments = SplitIntoSegments(text)
-
-                DebugLog("Segments found:", table.getn(segments))
-                for idx, seg in ipairs(segments) do
-                    DebugLog("  Seg", idx, seg.type, ":", string.sub(seg.content, 1, 60))
-                end
-
-                -- Check if there's Chinese text to translate (outside hyperlinks)
-                if not HasTranslatableContent(segments) then
-                    -- All Chinese is inside hyperlinks - show original
-                    frameOriginalAddMessage(self, text, r, g, b, id, holdTime)
-                    return
-                end
-
-                -- Build text to send to translation API
-                local textToTranslate = BuildTranslatableText(segments)
-
-                if WoWTranslate_CheckGlossary then
-                    local glossaryText, glossaryType = WoWTranslate_CheckGlossary(textToTranslate)
-                    if glossaryText then
-                        DebugLog("Glossary applied:", glossaryType)
-                        textToTranslate = glossaryText
-
-                        if not ContainsSourceLanguage(textToTranslate) then
-                            local finalText = ReconstructMessage(segments, textToTranslate)
-                            WoWTranslate_CacheSave(text, finalText)
-                            frameOriginalAddMessage(self, finalText, r, g, b, id, holdTime)
-                            return
-                        end
-                    end
-                end
-
-                DebugLog("To translate:", string.sub(textToTranslate, 1, 50))
-
-                -- Check cache first
-                local cached, found = WoWTranslate_CacheGet(text)
-                if found then
-                    DebugLog("Cache hit")
-                    WoWTranslate_API.TrackCacheHit(string.len(text))
-                    frameOriginalAddMessage(self, cached, r, g, b, id, holdTime)
-                    return
-                end
-
-                -- Need API translation
-                if WoWTranslate_API and WoWTranslate_API.IsAvailable() then
-                    messageCounter = messageCounter + 1
-                    local msgId = tostring(messageCounter)
-
-                    pendingMessages[msgId] = {
-                        frame = self,
-                        originalAddMessage = frameOriginalAddMessage,
-                        originalText = text,
-                        segments = segments,
-                        r = r,
-                        g = g,
-                        b = b,
-                        id = id,
-                        holdTime = holdTime,
-                        timestamp = GetTime()
-                    }
-
-                    DebugLog("Queued for API:", msgId)
-
-                    WoWTranslate_API.Translate(textToTranslate, function(translation, err)
-                        local pending = pendingMessages[msgId]
-                        if pending then
-                            pendingMessages[msgId] = nil
-
-                            if translation then
-                                DebugLog("API returned:", string.sub(translation, 1, 50))
-
-                                -- Reconstruct with original hyperlinks
-                                local finalText = ReconstructMessage(pending.segments, translation)
-
-                                DebugLog("Final:", string.sub(finalText, 1, 100))
-
-                                -- Debug: Check if links still have proper structure
-                                if string.find(finalText, "|H") and string.find(finalText, "|h") then
-                                    DebugLog("Final has |H and |h markers - link structure OK")
-                                else
-                                    DebugLog("WARNING: Final missing link markers!")
-                                end
-
-                                WoWTranslate_CacheSave(pending.originalText, finalText)
-                                pending.originalAddMessage(pending.frame, finalText, pending.r, pending.g, pending.b, pending.id, pending.holdTime)
-                            else
-                                DebugLog("API error:", err)
-                                pending.originalAddMessage(pending.frame, pending.originalText, pending.r, pending.g, pending.b, pending.id, pending.holdTime)
-                            end
-                        end
-                    end)
-
-                    return
-                else
-                    DebugLog("DLL not available")
-                end
-
-                frameOriginalAddMessage(self, text, r, g, b, id, holdTime)
+                TranslateIncomingBody(header, body, text, self, frameOriginalAddMessage, r, g, b, id, holdTime)
             end
 
             DebugLog("Hooked", frameName)
@@ -1514,6 +1588,31 @@ SlashCmdList["WOWTRANSLATE"] = function(msg)
             DEFAULT_CHAT_FRAME:AddMessage("  Usage: /wt prefix <text>")
         end
 
+    elseif cmd == "intag" then
+        if arg and arg ~= "" then
+            WoWTranslateDB.incomingPrefix = arg
+            DEFAULT_CHAT_FRAME:AddMessage("[WoWTranslate] Incoming tag set to: " .. arg)
+        else
+            DEFAULT_CHAT_FRAME:AddMessage("[WoWTranslate] Current incoming tag: " .. (WoWTranslateDB.incomingPrefix or DEFAULT_INCOMING_TAG))
+            DEFAULT_CHAT_FRAME:AddMessage("  Shown before translated incoming messages, e.g. " .. (WoWTranslateDB.incomingPrefix or DEFAULT_INCOMING_TAG) .. "[Guild] [Name]: message")
+            DEFAULT_CHAT_FRAME:AddMessage("  Usage: /wt intag <text>")
+        end
+
+    elseif cmd == "tagcolor" then
+        if arg and arg ~= "" then
+            local color = string.gsub(arg, "^#", "")
+            if IsValidHexColor(color) then
+                WoWTranslateDB.incomingTagColor = color
+                DEFAULT_CHAT_FRAME:AddMessage("|cFF" .. color .. "[WoWTranslate] Incoming tag color set to: " .. color .. "|r")
+            else
+                DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[WoWTranslate] Invalid color. Use 6 hex digits, e.g. 00FFFF|r")
+            end
+        else
+            local current = WoWTranslateDB.incomingTagColor or DEFAULT_INCOMING_TAG_COLOR
+            DEFAULT_CHAT_FRAME:AddMessage("|cFF" .. current .. "[WoWTranslate] Current tag color: " .. current .. "|r")
+            DEFAULT_CHAT_FRAME:AddMessage("  Usage: /wt tagcolor <RRGGBB>, e.g. /wt tagcolor FFD700")
+        end
+
     elseif cmd == "testout" then
         local testText = arg or "Hello, how are you?"
         DEFAULT_CHAT_FRAME:AddMessage("[WoWTranslate] Testing outgoing translation (EN->CN):")
@@ -1561,7 +1660,9 @@ SlashCmdList["WOWTRANSLATE"] = function(msg)
         DEFAULT_CHAT_FRAME:AddMessage("  -- Outgoing --")
         DEFAULT_CHAT_FRAME:AddMessage("  /wt outgoing on|off - Toggle outgoing translation")
         DEFAULT_CHAT_FRAME:AddMessage("  /wt outchannel [type] - Show/toggle channel settings")
-        DEFAULT_CHAT_FRAME:AddMessage("  /wt prefix <text> - Set message prefix")
+        DEFAULT_CHAT_FRAME:AddMessage("  /wt prefix <text> - Set outgoing message prefix")
+        DEFAULT_CHAT_FRAME:AddMessage("  /wt intag <text> - Set incoming tag (default [WT])")
+        DEFAULT_CHAT_FRAME:AddMessage("  /wt tagcolor <RRGGBB> - Set incoming tag color (default 00FFFF)")
     end
 end
 
@@ -1713,95 +1814,11 @@ end)
 -- Process messages waiting for item cache data
 
 local function ProcessItemCacheMessage(queued)
-    local text = queued.text
-
-    -- Split into segments (text and hyperlinks) - items should be cached now
-    local segments = SplitIntoSegments(text)
-
-    DebugLog("Processing cached item message, segments:", table.getn(segments))
-
-    -- Check if there's Chinese text to translate (outside hyperlinks)
-    if not HasTranslatableContent(segments) then
-        -- All Chinese is inside hyperlinks - show with localized links
-        local result = ""
-        for _, seg in ipairs(segments) do
-            result = result .. seg.content
-        end
-        queued.originalAddMessage(queued.frame, result, queued.r, queued.g, queued.b, queued.id, queued.holdTime)
-        return
-    end
-
-    -- Build text to send to translation API
-    local textToTranslate = BuildTranslatableText(segments)
-
-    if WoWTranslate_CheckGlossary then
-        local glossaryText, glossaryType = WoWTranslate_CheckGlossary(textToTranslate)
-        if glossaryText then
-            DebugLog("Glossary applied to item message:", glossaryType)
-            textToTranslate = glossaryText
-
-            if not ContainsSourceLanguage(textToTranslate) then
-                local finalText = ReconstructMessage(segments, textToTranslate)
-                WoWTranslate_CacheSave(text, finalText)
-                queued.originalAddMessage(queued.frame, finalText, queued.r, queued.g, queued.b, queued.id, queued.holdTime)
-                return
-            end
-        end
-    end
-
-    -- Check cache first
-    local cached, found = WoWTranslate_CacheGet(text)
-    if found then
-        DebugLog("Cache hit for item message")
-        WoWTranslate_API.TrackCacheHit(string.len(text))
-        queued.originalAddMessage(queued.frame, cached, queued.r, queued.g, queued.b, queued.id, queued.holdTime)
-        return
-    end
-
-    -- Need API translation
-    if WoWTranslate_API and WoWTranslate_API.IsAvailable() then
-        messageCounter = messageCounter + 1
-        local msgId = tostring(messageCounter)
-
-        pendingMessages[msgId] = {
-            frame = queued.frame,
-            originalAddMessage = queued.originalAddMessage,
-            originalText = text,
-            segments = segments,
-            r = queued.r,
-            g = queued.g,
-            b = queued.b,
-            id = queued.id,
-            holdTime = queued.holdTime,
-            timestamp = GetTime()
-        }
-
-        DebugLog("Queued item message for API:", msgId)
-
-        WoWTranslate_API.Translate(textToTranslate, function(translation, err)
-            local pending = pendingMessages[msgId]
-            if pending then
-                pendingMessages[msgId] = nil
-
-                if translation then
-                    DebugLog("API returned for item msg:", string.sub(translation, 1, 50))
-                    local finalText = ReconstructMessage(pending.segments, translation)
-                    WoWTranslate_CacheSave(pending.originalText, finalText)
-                    pending.originalAddMessage(pending.frame, finalText, pending.r, pending.g, pending.b, pending.id, pending.holdTime)
-                else
-                    DebugLog("API error for item msg:", err)
-                    pending.originalAddMessage(pending.frame, pending.originalText, pending.r, pending.g, pending.b, pending.id, pending.holdTime)
-                end
-            end
-        end)
-    else
-        -- No API, just show with localized links
-        local result = ""
-        for _, seg in ipairs(segments) do
-            result = result .. seg.content
-        end
-        queued.originalAddMessage(queued.frame, result, queued.r, queued.g, queued.b, queued.id, queued.holdTime)
-    end
+    -- Items are cached now; delegate to the same header/body-aware
+    -- translation logic the live AddMessage hook uses, so item-linked
+    -- messages get identical treatment (correct channel tag, proper tag
+    -- prefix, shared cache keying).
+    TranslateIncomingBody(queued.header, queued.body, queued.text, queued.frame, queued.originalAddMessage, queued.r, queued.g, queued.b, queued.id, queued.holdTime)
 end
 
 local itemCacheFrame = CreateFrame("Frame")
