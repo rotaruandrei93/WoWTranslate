@@ -1,6 +1,7 @@
 -- WoWTranslate_Minimap.lua
 -- Minimap button for WoWTranslate (Atlas pattern)
--- Left-click toggles config panel, drag to reposition around minimap edge
+-- Left-click toggles OUTGOING translation on/off, right-click opens the
+-- config panel, drag to reposition around the minimap edge.
 
 local MINIMAP_BUTTON_RADIUS = 80
 local DEFAULT_POSITION = 225  -- degrees, bottom-left area
@@ -32,7 +33,7 @@ button:SetFrameStrata("MEDIUM")
 button:SetFrameLevel(8)
 button:EnableMouse(true)
 button:SetMovable(true)
-button:RegisterForClicks("LeftButtonUp")
+button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 button:RegisterForDrag("LeftButton")
 
 -- Icon texture (scroll/note — fits "translation" theme)
@@ -84,12 +85,55 @@ button:SetScript("OnDragStop", function()
 end)
 
 -- ============================================================================
+-- ICON STATE (reflects whether OUTGOING translation is on or off)
+-- ============================================================================
+local function IsOutgoingOn()
+    return WoWTranslateDB and WoWTranslateDB.outgoingEnabled and true or false
+end
+
+-- Called whenever outgoingEnabled changes, from wherever it changes:
+-- this button, the settings checkbox, or /wt outgoing on|off.
+function WoWTranslate_Minimap_UpdateState()
+    if not icon then return end
+    if IsOutgoingOn() then
+        icon:SetVertexColor(1, 1, 1, 1)
+    else
+        icon:SetVertexColor(0.4, 0.4, 0.4, 0.7)
+    end
+end
+
+-- ============================================================================
 -- CLICK HANDLER
 -- ============================================================================
 button:SetScript("OnClick", function()
     if isDragging then return end
-    if WoWTranslate_ToggleConfig then
-        WoWTranslate_ToggleConfig()
+
+    if arg1 == "RightButton" then
+        if WoWTranslate_ToggleConfig then
+            WoWTranslate_ToggleConfig()
+        end
+        return
+    end
+
+    -- Left-click: flip OUTGOING translation only. This is the one people
+    -- toggle constantly (e.g. to talk plainly with other English speakers),
+    -- so it doesn't touch incoming translation or open the settings panel.
+    if WoWTranslate_SetOutgoingEnabled then
+        local newState = not IsOutgoingOn()
+        -- This one call updates the DB, the send-message hook, and this
+        -- button's own icon (see WoWTranslate_SetOutgoingEnabled).
+        WoWTranslate_SetOutgoingEnabled(newState)
+
+        if newState then
+            DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00[WoWTranslate] Outgoing translation ON|r")
+        else
+            DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[WoWTranslate] Outgoing translation OFF|r")
+        end
+
+        -- Keep the settings panel's checkbox in sync if it's open.
+        if WoWTranslate_RefreshConfigUI then
+            WoWTranslate_RefreshConfigUI()
+        end
     end
 end)
 
@@ -100,7 +144,13 @@ button:SetScript("OnEnter", function()
     if isDragging then return end
     GameTooltip:SetOwner(this, "ANCHOR_LEFT")
     GameTooltip:AddLine("WoWTranslate")
-    GameTooltip:AddLine("Click to open settings", 0.8, 0.8, 0.8)
+    if IsOutgoingOn() then
+        GameTooltip:AddLine("Outgoing translation: |cFF00FF00ON|r", 1, 1, 1)
+    else
+        GameTooltip:AddLine("Outgoing translation: |cFFFF0000OFF|r", 1, 1, 1)
+    end
+    GameTooltip:AddLine("Left-click: toggle outgoing translation", 0.8, 0.8, 0.8)
+    GameTooltip:AddLine("Right-click: open settings", 0.8, 0.8, 0.8)
     GameTooltip:Show()
 end)
 
@@ -117,4 +167,5 @@ function WoWTranslate_MinimapButton_Init()
         WoWTranslateDB.minimapPos = DEFAULT_POSITION
     end
     UpdatePosition()
+    WoWTranslate_Minimap_UpdateState()
 end

@@ -1071,7 +1071,9 @@ end
 -- GLOBAL FUNCTIONS FOR CONFIG UI
 -- ============================================================================
 
--- Toggle outgoing translation (called from config UI)
+-- Toggle outgoing translation. This is the single source of truth for
+-- turning outgoing translation on/off — called from the config UI
+-- checkbox, the /wt outgoing slash command, and the minimap left-click.
 function WoWTranslate_SetOutgoingEnabled(enabled)
     if enabled then
         WoWTranslateDB.outgoingEnabled = true
@@ -1079,6 +1081,9 @@ function WoWTranslate_SetOutgoingEnabled(enabled)
     else
         WoWTranslateDB.outgoingEnabled = false
         RemoveOutgoingHook()
+    end
+    if WoWTranslate_Minimap_UpdateState then
+        WoWTranslate_Minimap_UpdateState()
     end
 end
 
@@ -1464,13 +1469,11 @@ SlashCmdList["WOWTRANSLATE"] = function(msg)
     -- =====================================================================
     elseif cmd == "outgoing" then
         if arg == "on" or arg == "enable" then
-            WoWTranslateDB.outgoingEnabled = true
-            InstallOutgoingHook()
+            WoWTranslate_SetOutgoingEnabled(true)
             DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00[WoWTranslate] Outgoing translation enabled|r")
             DEFAULT_CHAT_FRAME:AddMessage("  Your English messages will be translated to Chinese")
         elseif arg == "off" or arg == "disable" then
-            WoWTranslateDB.outgoingEnabled = false
-            RemoveOutgoingHook()
+            WoWTranslate_SetOutgoingEnabled(false)
             DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[WoWTranslate] Outgoing translation disabled|r")
         else
             local status = WoWTranslateDB.outgoingEnabled and "|cFF00FF00ON|r" or "|cFFFF0000OFF|r"

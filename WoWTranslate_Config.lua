@@ -16,14 +16,6 @@ local LANGUAGES = {
     { code = "pt", name = "Portuguese" },
 }
 
-local PROVIDERS = {
-    { code = "google_free", name = "Google Free (no key)" },
-    { code = "google", name = "Google" },
-    { code = "azure", name = "Azure (Microsoft)" },
-    { code = "openai", name = "OpenAI-compatible" },
-    { code = "custom", name = "Custom HTTP" },
-}
-
 local function GetLanguageIndex(code)
     for i = 1, table.getn(LANGUAGES) do
         if LANGUAGES[i].code == code then
@@ -40,41 +32,6 @@ local function GetLanguageName(code)
         end
     end
     return code
-end
-
-local function GetProviderIndex(code)
-    for i = 1, table.getn(PROVIDERS) do
-        if PROVIDERS[i].code == code then
-            return i
-        end
-    end
-    return 1
-end
-
-local function GetProviderName(code)
-    for i = 1, table.getn(PROVIDERS) do
-        if PROVIDERS[i].code == code then
-            return PROVIDERS[i].name
-        end
-    end
-    return code
-end
-
-local function MaskApiKey(key)
-    if not key or key == "" then
-        return "(not set)"
-    end
-    if string.len(key) <= 6 then
-        return "******"
-    end
-    return string.sub(key, 1, 3) .. "..." .. string.sub(key, string.len(key) - 2)
-end
-
-local function trim(text)
-    if not text then return "" end
-    text = string.gsub(text, "^%s+", "")
-    text = string.gsub(text, "%s+$", "")
-    return text
 end
 
 -- ============================================================================
@@ -119,7 +76,7 @@ end
 local configFrame = CreateFrame("Frame", "WoWTranslateConfigFrame", UIParent)
 configFrame:Hide()
 configFrame:SetWidth(440)
-configFrame:SetHeight(780)
+configFrame:SetHeight(780) -- placeholder; recalculated to fit content at the bottom of the LAYOUT section below
 configFrame:SetPoint("CENTER", 0, 0)
 configFrame:SetMovable(true)
 configFrame:EnableMouse(true)
@@ -229,34 +186,39 @@ local function CreateCheckbox(label, xPos, yPos, configKey, subKey)
     return cb
 end
 
-local function CreateLangSelector(label, xPos, yPos, configKey)
+local function CreateLangSelector(label, xPos, yPos, configKey, totalWidth)
+    -- Single-row layout (label, arrows, display all inline) so every
+    -- selector in the panel looks and behaves the same way.
+    totalWidth = totalWidth or 170
     local frame = CreateFrame("Frame", nil, configFrame)
     frame:SetPoint("TOPLEFT", configFrame, "TOPLEFT", xPos, yPos)
-    frame:SetWidth(170)
-    frame:SetHeight(48)
+    frame:SetWidth(totalWidth)
+    frame:SetHeight(26)
 
     local lbl = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    lbl:SetPoint("TOPLEFT", 0, 0)
+    lbl:SetPoint("LEFT", 0, 0)
+    lbl:SetWidth(42)
+    lbl:SetJustifyH("LEFT")
     lbl:SetText(label)
 
     local leftBtn = CreateFrame("Button", nil, frame)
-    leftBtn:SetPoint("TOPLEFT", lbl, "BOTTOMLEFT", 0, -5)
-    leftBtn:SetWidth(24)
-    leftBtn:SetHeight(24)
+    leftBtn:SetPoint("LEFT", lbl, "RIGHT", 2, 0)
+    leftBtn:SetWidth(20)
+    leftBtn:SetHeight(20)
     leftBtn:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up")
     leftBtn:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Down")
     leftBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
 
     local display = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    display:SetPoint("LEFT", leftBtn, "RIGHT", 10, 0)
-    display:SetWidth(85)
+    display:SetPoint("LEFT", leftBtn, "RIGHT", 4, 0)
+    display:SetWidth(totalWidth - 42 - 20 - 20 - 12)
     display:SetJustifyH("CENTER")
     display:SetText("Language")
 
     local rightBtn = CreateFrame("Button", nil, frame)
-    rightBtn:SetPoint("LEFT", display, "RIGHT", 10, 0)
-    rightBtn:SetWidth(24)
-    rightBtn:SetHeight(24)
+    rightBtn:SetPoint("LEFT", display, "RIGHT", 4, 0)
+    rightBtn:SetWidth(20)
+    rightBtn:SetHeight(20)
     rightBtn:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up")
     rightBtn:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Down")
     rightBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
@@ -285,160 +247,76 @@ local function CreateLangSelector(label, xPos, yPos, configKey)
     return frame
 end
 
-local function CreateProviderSelector(xPos, yPos)
-    local frame = CreateFrame("Frame", nil, configFrame)
-    frame:SetPoint("TOPLEFT", configFrame, "TOPLEFT", xPos, yPos)
-    frame:SetWidth(365)
-    frame:SetHeight(30)
-
-    local label = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    label:SetPoint("LEFT", 0, 0)
-    label:SetText("Provider:")
-
-    local leftBtn = CreateFrame("Button", nil, frame)
-    leftBtn:SetPoint("LEFT", label, "RIGHT", 12, 0)
-    leftBtn:SetWidth(24)
-    leftBtn:SetHeight(24)
-    leftBtn:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up")
-    leftBtn:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Down")
-    leftBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
-
-    local display = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    display:SetPoint("LEFT", leftBtn, "RIGHT", 8, 0)
-    display:SetWidth(160)
-    display:SetJustifyH("CENTER")
-
-    local rightBtn = CreateFrame("Button", nil, frame)
-    rightBtn:SetPoint("LEFT", display, "RIGHT", 8, 0)
-    rightBtn:SetWidth(24)
-    rightBtn:SetHeight(24)
-    rightBtn:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up")
-    rightBtn:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Down")
-    rightBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
-
-    frame.display = display
-
-    local function Step(delta)
-        local code = WoWTranslate_TempConfig.provider or "google"
-        local idx = GetProviderIndex(code) + delta
-        if idx < 1 then idx = table.getn(PROVIDERS) end
-        if idx > table.getn(PROVIDERS) then idx = 1 end
-        WoWTranslate_TempConfig.provider = PROVIDERS[idx].code
-        frame.display:SetText(PROVIDERS[idx].name)
-        if configFrame.RefreshProviderFields then
-            configFrame.RefreshProviderFields()
-        end
-    end
-
-    leftBtn:SetScript("OnClick", function() Step(-1) end)
-    rightBtn:SetScript("OnClick", function() Step(1) end)
-
-    return frame
-end
-
-local function CreateEditRow(labelText, yPos)
-    local row = CreateFrame("Frame", nil, configFrame)
-    row:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 25, yPos)
-    row:SetWidth(390)
-    row:SetHeight(24)
-
-    local label = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    label:SetPoint("LEFT", 0, 0)
-    label:SetWidth(120)
-    label:SetJustifyH("LEFT")
-    label:SetText(labelText)
-
-    local bg = CreateFrame("Frame", nil, row)
-    bg:SetPoint("LEFT", label, "RIGHT", 4, 0)
-    bg:SetWidth(250)
-    bg:SetHeight(24)
-    bg:SetBackdrop({
-        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 12,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 }
-    })
-    bg:SetBackdropColor(0, 0, 0, 0.8)
-
-    local edit = CreateFrame("EditBox", nil, bg)
-    edit:SetPoint("TOPLEFT", 6, -5)
-    edit:SetPoint("BOTTOMRIGHT", -6, 5)
-    edit:SetFontObject(GameFontHighlight)
-    edit:SetAutoFocus(false)
-    edit:SetScript("OnEscapePressed", function() this:ClearFocus() end)
-    edit:SetScript("OnEnterPressed", function() this:ClearFocus() end)
-
-    row.label = label
-    row.edit = edit
-    return row
-end
-
 -- ============================================================================
 -- LAYOUT
 -- ============================================================================
-CreateHeader("Provider", -50)
-configFrame.elements.provider = CreateProviderSelector(25, -76)
-configFrame.elements.providerField1 = CreateEditRow("API Key:", -108)
-configFrame.elements.providerField2 = CreateEditRow("Endpoint:", -136)
-configFrame.elements.providerField3 = CreateEditRow("Model:", -164)
-configFrame.elements.providerField4 = CreateEditRow("Auth:", -192)
+-- Built from a single running cursor (instead of hand-picked pixel offsets)
+-- so spacing stays consistent and the frame height below is always exactly
+-- as tall as the content actually is.
+local y = -46
 
-local providerStatus = configFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-providerStatus:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 25, -222)
-providerStatus:SetWidth(390)
-providerStatus:SetJustifyH("LEFT")
-providerStatus:SetText("Provider status: unknown")
-configFrame.elements.providerStatus = providerStatus
+-- No Provider/Azure section here: this build ships a WoWTranslate.ini next
+-- to the DLL, pre-configured with the Azure key, so translation works with
+-- zero in-game setup (see the "defaults" comment in WoWTranslate.lua).
+-- Advanced users who want a different provider still have /wt provider,
+-- /wt googlekey, /wt azurekey, etc.
 
-local providerNote = configFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-providerNote:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 25, -241)
-providerNote:SetWidth(390)
-providerNote:SetJustifyH("LEFT")
-providerNote:SetTextColor(0.8, 0.8, 0.8)
-providerNote:SetText("Custom body template: /wt customtemplate or INI.")
-configFrame.elements.providerNote = providerNote
+CreateHeader("Incoming Translation (Chat -> You)", y)
+y = y - 26
+configFrame.elements.inEnabled = CreateCheckbox("Enable Incoming", 25, y, "enabled", nil)
+configFrame.elements.afkDisable = CreateCheckbox("Disable while AFK", 220, y, "disableWhileAfk", nil)
+y = y - 26
+configFrame.elements.translateSystem = CreateCheckbox("Translate system/emotes", 25, y, "translateSystemMessages", nil)
+y = y - 30
+configFrame.elements.inFrom = CreateLangSelector("From:", 25, y, "incomingFromLang", 175)
+configFrame.elements.inTo = CreateLangSelector("To:", 210, y, "incomingToLang", 175)
 
-local applyProviderBtn = CreateFrame("Button", nil, configFrame, "UIPanelButtonTemplate")
-applyProviderBtn:SetPoint("TOPRIGHT", configFrame, "TOPRIGHT", -25, -72)
-applyProviderBtn:SetWidth(70)
-applyProviderBtn:SetHeight(24)
-applyProviderBtn:SetText("Apply")
-
-CreateHeader("Incoming Translation (Chat -> You)", -270)
-configFrame.elements.inEnabled = CreateCheckbox("Enable Incoming", 25, -296, "enabled", nil)
-configFrame.elements.afkDisable = CreateCheckbox("Disable while AFK", 220, -296, "disableWhileAfk", nil)
-configFrame.elements.translateSystem = CreateCheckbox("Translate system/emotes", 25, -322, "translateSystemMessages", nil)
-configFrame.elements.inFrom = CreateLangSelector("From:", 25, -352, "incomingFromLang")
-configFrame.elements.inTo = CreateLangSelector("To:", 210, -352, "incomingToLang")
-
+y = y - 28
 local inChLabel = configFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-inChLabel:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 25, -414)
+inChLabel:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 25, y)
 inChLabel:SetText("Incoming Channels:")
-configFrame.elements.inChSay = CreateCheckbox("Say", 25, -436, "incomingChannels", "SAY")
-configFrame.elements.inChYell = CreateCheckbox("Yell", 140, -436, "incomingChannels", "YELL")
-configFrame.elements.inChWhisper = CreateCheckbox("Whisper", 255, -436, "incomingChannels", "WHISPER")
-configFrame.elements.inChParty = CreateCheckbox("Party", 25, -462, "incomingChannels", "PARTY")
-configFrame.elements.inChGuild = CreateCheckbox("Guild", 140, -462, "incomingChannels", "GUILD")
-configFrame.elements.inChRaid = CreateCheckbox("Raid", 255, -462, "incomingChannels", "RAID")
-configFrame.elements.inChBG = CreateCheckbox("Battleground", 25, -488, "incomingChannels", "BATTLEGROUND")
-configFrame.elements.inChChannel = CreateCheckbox("World/Local", 165, -488, "incomingChannels", "CHANNEL")
+y = y - 26
+configFrame.elements.inChSay = CreateCheckbox("Say", 25, y, "incomingChannels", "SAY")
+configFrame.elements.inChYell = CreateCheckbox("Yell", 140, y, "incomingChannels", "YELL")
+configFrame.elements.inChWhisper = CreateCheckbox("Whisper", 255, y, "incomingChannels", "WHISPER")
+y = y - 26
+configFrame.elements.inChParty = CreateCheckbox("Party", 25, y, "incomingChannels", "PARTY")
+configFrame.elements.inChGuild = CreateCheckbox("Guild", 140, y, "incomingChannels", "GUILD")
+configFrame.elements.inChRaid = CreateCheckbox("Raid", 255, y, "incomingChannels", "RAID")
+y = y - 26
+configFrame.elements.inChBG = CreateCheckbox("Battleground", 25, y, "incomingChannels", "BATTLEGROUND")
+configFrame.elements.inChChannel = CreateCheckbox("World/Local", 165, y, "incomingChannels", "CHANNEL")
 
-CreateHeader("Outgoing Translation (You -> Chat)", -522)
-configFrame.elements.outEnabled = CreateCheckbox("Enable Outgoing", 25, -548, "outgoingEnabled", nil)
-configFrame.elements.outFrom = CreateLangSelector("From:", 25, -578, "outgoingFromLang")
-configFrame.elements.outTo = CreateLangSelector("To:", 210, -578, "outgoingToLang")
+y = y - 34
+CreateHeader("Outgoing Translation (You -> Chat)", y)
+y = y - 26
+configFrame.elements.outEnabled = CreateCheckbox("Enable Outgoing", 25, y, "outgoingEnabled", nil)
+y = y - 30
+configFrame.elements.outFrom = CreateLangSelector("From:", 25, y, "outgoingFromLang", 175)
+configFrame.elements.outTo = CreateLangSelector("To:", 210, y, "outgoingToLang", 175)
 
+y = y - 28
 local chLabel = configFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-chLabel:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 25, -640)
+chLabel:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 25, y)
 chLabel:SetText("Outgoing Channels:")
-configFrame.elements.chWhisper = CreateCheckbox("Whisper", 25, -662, "outgoingChannels", "WHISPER")
-configFrame.elements.chParty = CreateCheckbox("Party", 140, -662, "outgoingChannels", "PARTY")
-configFrame.elements.chSay = CreateCheckbox("Say", 255, -662, "outgoingChannels", "SAY")
-configFrame.elements.chGuild = CreateCheckbox("Guild", 25, -688, "outgoingChannels", "GUILD")
-configFrame.elements.chRaid = CreateCheckbox("Raid", 140, -688, "outgoingChannels", "RAID")
-configFrame.elements.chYell = CreateCheckbox("Yell", 255, -688, "outgoingChannels", "YELL")
-configFrame.elements.chBG = CreateCheckbox("Battleground", 25, -714, "outgoingChannels", "BATTLEGROUND")
-configFrame.elements.chChannel = CreateCheckbox("World/Local", 165, -714, "outgoingChannels", "CHANNEL")
+y = y - 26
+configFrame.elements.chWhisper = CreateCheckbox("Whisper", 25, y, "outgoingChannels", "WHISPER")
+configFrame.elements.chParty = CreateCheckbox("Party", 140, y, "outgoingChannels", "PARTY")
+configFrame.elements.chSay = CreateCheckbox("Say", 255, y, "outgoingChannels", "SAY")
+y = y - 26
+configFrame.elements.chGuild = CreateCheckbox("Guild", 25, y, "outgoingChannels", "GUILD")
+configFrame.elements.chRaid = CreateCheckbox("Raid", 140, y, "outgoingChannels", "RAID")
+configFrame.elements.chYell = CreateCheckbox("Yell", 255, y, "outgoingChannels", "YELL")
+y = y - 26
+configFrame.elements.chBG = CreateCheckbox("Battleground", 25, y, "outgoingChannels", "BATTLEGROUND")
+configFrame.elements.chChannel = CreateCheckbox("World/Local", 165, y, "outgoingChannels", "CHANNEL")
+
+-- Reserve room for the bottom Clear Cache / Save buttons. The checkbox
+-- template itself renders taller (~32px) than the 24px row spacing used
+-- between checkbox rows, so the last row needs extra clearance here or it
+-- visually overlaps the buttons below it — that's what was happening.
+y = y - 34 - 54
+configFrame:SetHeight(math.abs(y))
 
 local clearBtn = CreateFrame("Button", nil, configFrame, "UIPanelButtonTemplate")
 clearBtn:SetPoint("BOTTOMLEFT", configFrame, "BOTTOMLEFT", 25, 20)
@@ -463,133 +341,9 @@ saveBtn:SetScript("OnClick", function()
     configFrame:Hide()
 end)
 
--- ============================================================================
--- REFRESH UI FROM CONFIG
--- ============================================================================
-function configFrame.RefreshProviderFields()
-    local e = configFrame.elements
-    local cfg = WoWTranslate_TempConfig
-    local provider = cfg.provider or "google"
-
-    if e.provider and e.provider.display then
-        e.provider.display:SetText(GetProviderName(provider))
-    end
-
-    e.providerField1:Show()
-    e.providerField2:Show()
-    e.providerField3:Show()
-    e.providerField4:Show()
-    e.providerNote:Show()
-
-    if provider == "google" then
-        e.providerField1.label:SetText("Google Key:")
-        e.providerField1.edit:SetText("")
-        e.providerField2:Hide()
-        e.providerField3:Hide()
-        e.providerField4:Hide()
-        e.providerNote:SetText("Current key: " .. MaskApiKey(cfg.googleApiKey))
-    elseif provider == "azure" then
-        e.providerField1.label:SetText("Azure Key:")
-        e.providerField1.edit:SetText("")
-        e.providerField2.label:SetText("Region (blank=global):")
-        e.providerField2.edit:SetText(cfg.azureRegion or "")
-        e.providerField3:Hide()
-        e.providerField4:Hide()
-        e.providerNote:SetText("Current key: " .. MaskApiKey(cfg.azureApiKey) .. " (or set via WoWTranslate.ini)")
-    elseif provider == "openai" then
-        e.providerField1.label:SetText("API Key:")
-        e.providerField1.edit:SetText("")
-        e.providerField2.label:SetText("Endpoint:")
-        e.providerField2.edit:SetText(cfg.openaiEndpoint or "https://api.openai.com/v1/chat/completions")
-        e.providerField3.label:SetText("Model:")
-        e.providerField3.edit:SetText(cfg.openaiModel or "gpt-4.1-mini")
-        e.providerField4:Hide()
-        e.providerNote:SetText("Current key: " .. MaskApiKey(cfg.openaiApiKey))
-    else
-        e.providerField1.label:SetText("API Key:")
-        e.providerField1.edit:SetText("")
-        e.providerField2.label:SetText("Endpoint:")
-        e.providerField2.edit:SetText(cfg.customEndpoint or "")
-        e.providerField3.label:SetText("Path:")
-        e.providerField3.edit:SetText(cfg.customResponsePath or "translation")
-        e.providerField4.label:SetText("Auth:")
-        e.providerField4.edit:SetText((cfg.customAuthHeader or "Authorization") .. " " .. (cfg.customAuthScheme or "Bearer"))
-        e.providerNote:SetText("Body template: /wt customtemplate or INI.")
-    end
-end
-
-local function RefreshProviderStatus()
-    local e = configFrame.elements
-    if not e.providerStatus then return end
-
-    local status = WoWTranslate_API and WoWTranslate_API.GetProviderStatus and WoWTranslate_API.GetProviderStatus() or nil
-    if status then
-        local configured = status.configured and "configured" or "not configured"
-        local ready = status.ready and "ready" or "not ready"
-        e.providerStatus:SetText("Provider status: " .. configured .. ", " .. ready)
-    else
-        e.providerStatus:SetText("Provider status: unknown")
-    end
-end
-
-local function ApplyProviderFields()
-    local e = configFrame.elements
-    local cfg = WoWTranslate_TempConfig
-    local provider = cfg.provider or "google"
-
-    if provider == "google" then
-        local key = e.providerField1.edit:GetText()
-        if key and key ~= "" then
-            cfg.googleApiKey = key
-        end
-    elseif provider == "azure" then
-        local key = e.providerField1.edit:GetText()
-        if key and key ~= "" then cfg.azureApiKey = key end
-        cfg.azureRegion = e.providerField2.edit:GetText()
-    elseif provider == "openai" then
-        local key = e.providerField1.edit:GetText()
-        if key and key ~= "" then cfg.openaiApiKey = key end
-        cfg.openaiEndpoint = e.providerField2.edit:GetText()
-        cfg.openaiModel = e.providerField3.edit:GetText()
-    else
-        local key = e.providerField1.edit:GetText()
-        if key and key ~= "" then cfg.customApiKey = key end
-        cfg.customEndpoint = e.providerField2.edit:GetText()
-        cfg.customResponsePath = e.providerField3.edit:GetText()
-
-        local auth = trim(e.providerField4.edit:GetText())
-        local space = string.find(auth, " ", 1, true)
-        if space then
-            cfg.customAuthHeader = string.sub(auth, 1, space - 1)
-            cfg.customAuthScheme = trim(string.sub(auth, space + 1))
-        elseif auth ~= "" then
-            cfg.customAuthHeader = auth
-            cfg.customAuthScheme = ""
-        end
-    end
-
-    SaveTempConfig()
-    if WoWTranslate_ApplyProviderConfig then
-        local ok, err = WoWTranslate_ApplyProviderConfig(false)
-        if ok then
-            DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00[WoWTranslate] Provider settings applied|r")
-        else
-            DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[WoWTranslate] Provider not configured: " .. (err or "unknown") .. "|r")
-        end
-    end
-
-    configFrame.RefreshProviderFields()
-    RefreshProviderStatus()
-end
-
-applyProviderBtn:SetScript("OnClick", ApplyProviderFields)
-
 local function RefreshUI()
     local e = configFrame.elements
     local cfg = WoWTranslate_TempConfig
-
-    configFrame.RefreshProviderFields()
-    RefreshProviderStatus()
 
     if e.inEnabled then e.inEnabled:SetChecked(cfg.enabled) end
     if e.afkDisable then e.afkDisable:SetChecked(cfg.disableWhileAfk) end
@@ -630,16 +384,14 @@ local function RefreshUI()
     if e.chChannel then e.chChannel:SetChecked(ch.CHANNEL) end
 end
 
-local statusUpdateFrame = CreateFrame("Frame")
-local statusUpdateElapsed = 0
-statusUpdateFrame:SetScript("OnUpdate", function()
-    if not configFrame:IsVisible() then return end
-    statusUpdateElapsed = statusUpdateElapsed + arg1
-    if statusUpdateElapsed >= 2 then
-        statusUpdateElapsed = 0
-        RefreshProviderStatus()
+-- Lets other files (e.g. the minimap button) refresh this panel's
+-- checkboxes/selectors live, without forcing it open, if it's already
+-- visible.
+function WoWTranslate_RefreshConfigUI()
+    if configFrame:IsVisible() then
+        RefreshUI()
     end
-end)
+end
 
 -- ============================================================================
 -- PUBLIC API
