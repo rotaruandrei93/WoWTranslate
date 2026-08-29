@@ -2,7 +2,7 @@
 ## Title: WoWTranslate
 ## Notes: Real-time translation for WoW 1.12 using local provider API keys
 ## Version: 2.1
-## Author: WoWTranslate Team
+## Author: rotaruandrei93
 ## SavedVariables: WoWTranslateDB WoWTranslateCache WoWTranslateDebugLog
 
 WoWTranslate_Glossary.lua
