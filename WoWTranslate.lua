@@ -790,15 +790,43 @@ local function TranslateIncomingBody(header, body, originalText, frame, original
 
     -- Build text to send to translation API
     local textToTranslate = BuildTranslatableText(segments)
+    local glossaryPlaceholders = nil
 
-    if WoWTranslate_CheckGlossary then
-        local glossaryText, glossaryType = WoWTranslate_CheckGlossary(textToTranslate)
-        if glossaryText then
-            DebugLog("Glossary applied:", glossaryType)
-            textToTranslate = glossaryText
+    -- Whole-message exact match: the entire body is itself one known
+    -- glossary phrase. Safe to resolve to English immediately - there's
+    -- no leftover Chinese, so nothing gets sent to the API at all.
+    local exactText = WoWTranslate_CheckGlossaryExact and WoWTranslate_CheckGlossaryExact(textToTranslate)
+    if exactText then
+        DebugLog("Glossary exact match applied")
+        textToTranslate = exactText
+
+        if not ContainsSourceLanguage(textToTranslate) then
+            local finalBody = ReconstructMessage(segments, textToTranslate)
+            WoWTranslate_CacheSave(body, finalBody)
+            originalAddMessage(frame, GetIncomingTag() .. header .. finalBody, r, g, b, id, holdTime)
+            return
+        end
+    elseif WoWTranslate_CheckGlossaryProtected then
+        -- Partial match: some terms are known, some Chinese is still
+        -- left over and needs the real translation API/DLL. Substitute
+        -- matched terms for placeholder tokens (never their raw English
+        -- text) so the API can't see -- and can't mangle -- a glossary
+        -- term. This mirrors how hyperlinks are already protected with
+        -- "http://ph.wt/N" placeholders in BuildTranslatableText /
+        -- ReconstructMessage above; without it, a glossary term like
+        -- "STSM" -> "Stratholme" could get spliced directly next to
+        -- untranslated Chinese with no separating space and handed to
+        -- the API, which was free to re-translate or drop it.
+        local protectedText, placeholders, hasMatch = WoWTranslate_CheckGlossaryProtected(textToTranslate)
+        if hasMatch then
+            DebugLog("Glossary partial match applied (protected)")
+            textToTranslate = protectedText
+            glossaryPlaceholders = placeholders
 
             if not ContainsSourceLanguage(textToTranslate) then
-                local finalBody = ReconstructMessage(segments, textToTranslate)
+                -- Nothing else needs the API - resolve placeholders now.
+                local resolvedText = WoWTranslate_ResolveGlossaryPlaceholders(textToTranslate, placeholders)
+                local finalBody = ReconstructMessage(segments, resolvedText)
                 WoWTranslate_CacheSave(body, finalBody)
                 originalAddMessage(frame, GetIncomingTag() .. header .. finalBody, r, g, b, id, holdTime)
                 return
@@ -830,6 +858,7 @@ local function TranslateIncomingBody(header, body, originalText, frame, original
             header = header,
             body = body,
             segments = segments,
+            glossaryPlaceholders = glossaryPlaceholders,
             r = r,
             g = g,
             b = b,
@@ -847,6 +876,15 @@ local function TranslateIncomingBody(header, body, originalText, frame, original
 
                 if translation then
                     DebugLog("API returned:", string.sub(translation, 1, 50))
+
+                    -- Restore glossary terms BEFORE reconstructing
+                    -- hyperlinks, so a glossary term was never exposed to
+                    -- the translation API and can't come back mangled,
+                    -- re-translated, or reverted to the original text.
+                    if pending.glossaryPlaceholders then
+                        translation = WoWTranslate_ResolveGlossaryPlaceholders(translation, pending.glossaryPlaceholders)
+                        DebugLog("After glossary restore:", string.sub(translation, 1, 100))
+                    end
 
                     -- Reconstruct with original hyperlinks
                     local finalBody = ReconstructMessage(pending.segments, translation)
