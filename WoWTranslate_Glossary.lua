@@ -89,6 +89,7 @@ WoWTranslateGlossary["SM"] = "Scarlet Monastery"
 WoWTranslateGlossary["sm"] = "Scarlet Monastery"
 WoWTranslateGlossary["血色"] = "Scarlet Monastery"
 WoWTranslateGlossary["XS"] = "Scarlet Monastery"
+WoWTranslateGlossary["xs"] = "Scarlet Monastery"
 WoWTranslateGlossary["血色图书馆"] = "Scarlet Monastery lib"
 WoWTranslateGlossary["血色墓地"] = "Scarlet Monastery Graveyard"
 WoWTranslateGlossary["血色武器库"] = "Scarlet Monastery Arm"
@@ -102,9 +103,13 @@ WoWTranslateGlossary["DM"] = "Dire Maul"
 WoWTranslateGlossary["dm"] = "Dire Maul"
 WoWTranslateGlossary["厄运"] = "Dire Maul"
 WoWTranslateGlossary["DME"] = "Dire Maul East"
+WoWTranslateGlossary["dme"] = "Dire Maul East"
 WoWTranslateGlossary["DMW"] = "Dire Maul West"
+WoWTranslateGlossary["dmw"] = "Dire Maul West"
 WoWTranslateGlossary["DMN"] = "Dire Maul North"
+WoWTranslateGlossary["dmn"] = "Dire Maul North"
 WoWTranslateGlossary["DM贡品"] = "Dire Maul Tribute"
+WoWTranslateGlossary["dm贡品"] = "Dire Maul Tribute"
 WoWTranslateGlossary["厄运东"] = "Dire Maul East"
 WoWTranslateGlossary["厄运西"] = "Dire Maul West"
 WoWTranslateGlossary["厄运北"] = "Dire Maul North"
@@ -120,10 +125,15 @@ WoWTranslateGlossary["死亡骑士"] = "Stratholme UD"
 WoWTranslateGlossary["活面"] = "Stratholme Live"
 WoWTranslateGlossary["死面"] = "Stratholme Undead"
 WoWTranslateGlossary["STSM"] = "Stratholme"
+WoWTranslateGlossary["stsm"] = "Stratholme"
 WoWTranslateGlossary["STSM 血色区"] = "Stratholme Live"
+WoWTranslateGlossary["stsm 血色区"] = "Stratholme Live"
 WoWTranslateGlossary["STSM血色区"] = "Stratholme Live"
+WoWTranslateGlossary["stsm血色区"] = "Stratholme Live"
 WoWTranslateGlossary["STSM DK区"] = "Stratholme Undead"
+WoWTranslateGlossary["stsm dk区"] = "Stratholme Undead"
 WoWTranslateGlossary["STSM DK签马"] = "Stratholme Undead"
+WoWTranslateGlossary["stsm dk签马"] = "Stratholme Undead"
 
 -- Scholomance
 WoWTranslateGlossary["通灵学院"] = "Scholomance"
@@ -131,6 +141,7 @@ WoWTranslateGlossary["SCHOLO"] = "Scholomance"
 WoWTranslateGlossary["scholo"] = "Scholomance"
 WoWTranslateGlossary["通灵"] = "Scholomance"
 WoWTranslateGlossary["TL"] = "Scholomance"
+WoWTranslateGlossary["tl"] = "Scholomance"
 
 -- Blackrock Depths
 WoWTranslateGlossary["黑石深渊"] = "Blackrock Depths"
@@ -174,7 +185,7 @@ WoWTranslateGlossary["SFK"] = "Shadowfang Keep"
 WoWTranslateGlossary["sfk"] = "Shadowfang Keep"
 WoWTranslateGlossary["影牙"] = "Shadowfang Keep"
 
--- Stocks 24~30lvl
+-- Stocks 22~30lvl
 WoWTranslateGlossary["小监狱"] = "Stocks"
 
 -- Gnomeregan
@@ -204,12 +215,14 @@ WoWTranslateGlossary["ZF"] = "Zul'Farrak"
 WoWTranslateGlossary["zf"] = "Zul'Farrak"
 WoWTranslateGlossary["祖法"] = "Zul'Farrak"
 WoWTranslateGlossary["ZR"] = "Zul'Farrak"
+WoWTranslateGlossary["zr"] = "Zul'Farrak"
 
 -- Maraudon
 WoWTranslateGlossary["玛拉顿"] = "Maraudon"
 WoWTranslateGlossary["MARA"] = "Maraudon"
 WoWTranslateGlossary["mara"] = "Maraudon"
 WoWTranslateGlossary["MLD"] = "Maraudon"
+WoWTranslateGlossary["mld"] = "Maraudon"
 
 -- Sunken Temple
 WoWTranslateGlossary["沉没的神庙"] = "Sunken Temple"
@@ -222,10 +235,12 @@ WoWTranslateGlossary["怒焰裂谷"] = "Ragefire Chasm"
 WoWTranslateGlossary["RFC"] = "Ragefire Chasm"
 WoWTranslateGlossary["rfc"] = "Ragefire Chasm"
 WoWTranslateGlossary["NY"] = "Ragefire Chasm"
+WoWTranslateGlossary["ny"] = "Ragefire Chasm"
 
 -- Stockades
 WoWTranslateGlossary["监狱"] = "Stockades"
 WoWTranslateGlossary["STOCKS"] = "Stockades"
+WoWTranslateGlossary["stocks"] = "Stockades"
 
 -- Blackfathom Deeps
 WoWTranslateGlossary["黑暗深渊"] = "Blackfathom Deeps"
@@ -245,9 +260,11 @@ WoWTranslateGlossary["采石场"] = "The Hateforge"
 
 -- The Black Morass
 WoWTranslateGlossary["BM"] = "The Black Morass"
+WoWTranslateGlossary["bm"] = "The Black Morass"
 WoWTranslateGlossary["黑暗沼泽"] = "The Black Morass"
 WoWTranslateGlossary["时光"] = "The Black Morass"
 WoWTranslateGlossary["时光5+2"] = "The Black Morass : First 5 bosses, 1 sand each; last 2 bosses, all Need. "
+WoWTranslateGlossary["时光 5+2"] = "The Black Morass : First 5 bosses, 1 sand each; last 2 bosses, all Need. "
 
 -- Dragonmaw Retreat
 WoWTranslateGlossary["龙吼"] = "Dragonmaw Retreat"
@@ -256,8 +273,8 @@ WoWTranslateGlossary["龙吼居所"] = "Dragonmaw Retreat"
 -- Gilneas
 WoWTranslateGlossary["吉尔尼斯"] = "Gilneas"
 
--- Stormwreck Ruins
-WoWTranslateGlossary["风暴废墟"] = "Stormwreck Ruins"
+-- Stormwrought Ruins
+WoWTranslateGlossary["风暴废墟"] = "Stormwrought Ruins"
 
 -- Karazhan Crypts
 WoWTranslateGlossary["卡拉赞墓地"] = "Karazhan Crypts"
@@ -876,18 +893,18 @@ local function ReplaceAllLiteral(haystack, needle, replacement)
 end
 
 -- Check glossary for partial matches and replace terms in text
-function WoWTranslate_CheckGlossaryPartial(text)
-    -- Two-phase substitution. Phase 1 swaps every matched glossary
-    -- term for a unique placeholder token (never for its English text
-    -- directly). Phase 2 swaps the placeholders for their English
-    -- text at the very end. This guarantees a glossary key can never
-    -- match text that an *earlier* glossary substitution produced -
-    -- e.g. without this, "血色修道院" -> "Scarlet Monastery" followed
-    -- by the separate entry "st" -> "Sunken Temple" would match the
-    -- "st" inside "Mona-st-ery" and mangle it into
-    -- "Scarlet MonaSunken Templeery". With placeholders, "Monastery"
-    -- literally doesn't exist yet when other keys are being matched,
-    -- so it can't be matched into.
+-- Phase 1 of the two-phase substitution described below: swaps every
+-- matched glossary term for a unique "\2N\2" placeholder token (never for
+-- its English text directly). Shared by WoWTranslate_CheckGlossaryPartial
+-- (which immediately resolves the placeholders, for callers that just want
+-- a final string) and WoWTranslate_CheckGlossaryProtected (which leaves
+-- them unresolved, for callers that need to protect the substitution from
+-- a later processing step -- see that function's comment).
+--
+-- Returns: working text with placeholders substituted in, the placeholders
+-- table (slot -> English text), and hasMatch (false if nothing matched, in
+-- which case working == text and placeholders is empty).
+local function GlossaryPartialSubstitute(text)
     local working = text
     local placeholders = {}
     local hasMatch = false
@@ -914,29 +931,143 @@ function WoWTranslate_CheckGlossaryPartial(text)
                 local english = WoWTranslateGlossary[chinese]
                 local slot = table.getn(placeholders) + 1
                 placeholders[slot] = english
-                -- \1 (byte 0x01) is a control character that never
+                -- \2 (byte 0x02) is a control character that never
                 -- appears in normal chat text, so it's a safe,
-                -- collision-free placeholder delimiter.
-                local placeholder = "\1" .. slot .. "\1"
+                -- collision-free placeholder delimiter. (Distinct from
+                -- the \1 hyperlink-style "http://ph.wt/N" placeholders
+                -- used elsewhere in the addon, so the two never collide.)
+                local placeholder = "\2" .. slot .. "\2"
                 working = ReplaceAllLiteral(working, chinese, placeholder)
                 hasMatch = true
             end
         end
     end
 
+    return working, placeholders, hasMatch
+end
+
+function WoWTranslate_CheckGlossaryPartial(text)
+    -- Two-phase substitution. Phase 1 (GlossaryPartialSubstitute above)
+    -- swaps every matched glossary term for a unique placeholder token
+    -- (never for its English text directly). Phase 2 swaps the
+    -- placeholders for their English text at the very end. This
+    -- guarantees a glossary key can never match text that an *earlier*
+    -- glossary substitution produced - e.g. without this, "血色修道院" ->
+    -- "Scarlet Monastery" followed by the separate entry "st" -> "Sunken
+    -- Temple" would match the "st" inside "Mona-st-ery" and mangle it
+    -- into "Scarlet MonaSunken Templeery". With placeholders, "Monastery"
+    -- literally doesn't exist yet when other keys are being matched, so
+    -- it can't be matched into.
+    local working, placeholders, hasMatch = GlossaryPartialSubstitute(text)
+
     if not hasMatch then
         return nil, nil
     end
 
-    for slot, english in ipairs(placeholders) do
-        local placeholder = "\1" .. slot .. "\1"
-        working = ReplaceAllLiteral(working, placeholder, english)
-    end
+    working = WoWTranslate_ResolveGlossaryPlaceholders(working, placeholders)
 
     return working, "glossary_partial"
 end
 
--- Main glossary check function - tries exact first, then partial
+-- Same matching as WoWTranslate_CheckGlossaryPartial, but leaves the "\2N\2"
+-- placeholder tokens UNRESOLVED in the returned text instead of swapping
+-- them for English immediately.
+--
+-- Why this exists: if a message is only *partially* covered by the
+-- glossary (e.g. "STSM马队带奶,4=1能拉", where "STSM" and "4=1" are known
+-- terms but "马队带奶" isn't), the leftover Chinese still has to go through
+-- the real translation API/DLL for that remainder. Handing that API the
+-- already-resolved English ("Stratholme马队带奶,LF1Mcan summon" - note no
+-- spacing around the inserted English either) mixes fully-translated text
+-- in with untranslated Chinese, which can confuse the API/LLM enough that
+-- it re-translates, drops, or otherwise mangles the glossary term that was
+-- already correct - which is how "STSM" was surviving back into the final
+-- output instead of "Stratholme".
+--
+-- Callers should send the PLACEHOLDER text (not English) to the
+-- translation step, exactly like this addon already does for hyperlinks
+-- via the "http://ph.wt/N" placeholders in BuildTranslatableText /
+-- ReconstructMessage: a translation API passes short opaque tokens through
+-- unchanged far more reliably than it preserves arbitrary embedded English.
+-- Once translation is complete, call WoWTranslate_ResolveGlossaryPlaceholders
+-- on the result to swap the placeholders back to their real English text.
+--
+-- Returns: placeholder text, the placeholders table (for
+-- WoWTranslate_ResolveGlossaryPlaceholders), and hasMatch (false if
+-- nothing in the glossary matched at all).
+function WoWTranslate_CheckGlossaryProtected(text)
+    return GlossaryPartialSubstitute(text)
+end
+
+-- Byte-range check for "this character would run into an adjacent word if
+-- not separated by a space" - ASCII letters and digits. Used only to decide
+-- placeholder spacing below; CJK bytes and punctuation are always >= 128 or
+-- outside these ranges, so they're deliberately excluded (WoW chat text
+-- doesn't use spaces between CJK words, and we don't want to inject spaces
+-- next to punctuation like "," or ")").
+local function IsWordChar(byte)
+    if not byte then return false end
+    return (byte >= 48 and byte <= 57) or (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122)
+end
+
+-- Appends `chunk` to `out`, inserting a single space between them first if
+-- the last character of `out` and the first character of `chunk` would
+-- otherwise read as one run-on word (e.g. "Stratholme" + "horse team..."
+-- -> "Stratholmehorse team..."). Used by WoWTranslate_ResolveGlossaryPlaceholders
+-- below to keep every chunk boundary - placeholder-to-placeholder,
+-- placeholder-to-surrounding-text, and vice versa - consistently spaced.
+local function AppendWithBoundarySpace(out, chunk)
+    if chunk == "" then return out end
+    local prevByte = string.byte(out, string.len(out))
+    local nextByte = string.byte(chunk, 1)
+    if IsWordChar(prevByte) and IsWordChar(nextByte) then
+        return out .. " " .. chunk
+    end
+    return out .. chunk
+end
+
+-- Resolves "\2N\2" placeholders (from WoWTranslate_CheckGlossaryProtected)
+-- back to their real English text. Safe to call even if placeholders is
+-- nil/empty (returns text unchanged). Adds a space at any boundary where a
+-- resolved term would otherwise be smashed directly against an adjacent
+-- English word or number - e.g. "STSM马队带奶,4=1能拉" resolving (after the
+-- Chinese portions come back from the API as English too) to
+-- "Stratholme horse team bring healer, LF1M can summon" instead of
+-- "Stratholmehorse team bring healer,LF1Mcan summon".
+function WoWTranslate_ResolveGlossaryPlaceholders(text, placeholders)
+    if not placeholders or table.getn(placeholders) == 0 then
+        return text
+    end
+
+    local out = ""
+    local pos = 1
+
+    while true do
+        local startPos, endPos, slotStr = string.find(text, "\2(%d+)\2", pos)
+        if not startPos then
+            out = AppendWithBoundarySpace(out, string.sub(text, pos))
+            break
+        end
+
+        if startPos > pos then
+            out = AppendWithBoundarySpace(out, string.sub(text, pos, startPos - 1))
+        end
+
+        local slot = tonumber(slotStr)
+        local english = placeholders[slot] or string.sub(text, startPos, endPos)
+        out = AppendWithBoundarySpace(out, english)
+
+        pos = endPos + 1
+    end
+
+    return out
+end
+
+-- Main glossary check function - tries exact first, then partial. Returns
+-- a fully-resolved English string, same as before. Kept for backward
+-- compatibility (e.g. /wt test); WoWTranslate.lua's live chat pipeline now
+-- uses WoWTranslate_CheckGlossaryExact + WoWTranslate_CheckGlossaryProtected
+-- directly so it can protect partial matches (see comment above).
 function WoWTranslate_CheckGlossary(text)
     -- Try exact match first
     local result, matchType = WoWTranslate_CheckGlossaryExact(text)
