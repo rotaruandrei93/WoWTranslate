@@ -41,6 +41,7 @@ local DEFAULT_PREFIX = "[Translated by WoWTranslate]"
 
 -- Incoming channel detection state
 local currentIncomingChannel = nil
+local currentIncomingChannelName = nil  -- Base name of a CHAT_MSG_CHANNEL channel, e.g. "Trade"
 local currentIsSystemEvent = false  -- True for system/emote/NPC events
 
 local EVENT_TO_CHANNEL = {
@@ -79,6 +80,20 @@ local SYSTEM_EVENTS = {
     CHAT_MSG_COMBAT_MISC_INFO = true,
 }
 
+-- CHAT_MSG_CHANNEL's channelName arg looks like "3. Trade - Orgrimmar" or
+-- just "4. LookingForGroup" -- strip the leading "N. " index and any
+-- trailing " - Zone" so it matches the plain names GetChannelList() returns
+-- (what the settings panel uses to build its per-channel checkboxes).
+local function GetChannelBaseName(channelName)
+    if not channelName then return nil end
+    local base = string.gsub(channelName, "^%d+%.%s*", "")
+    local dashPos = string.find(base, " %- ")
+    if dashPos then
+        base = string.sub(base, 1, dashPos - 1)
+    end
+    return base
+end
+
 local defaults = {
     enabled = true,
     -- Default provider is "azure": this build ships a WoWTranslate.ini next to
@@ -87,6 +102,12 @@ local defaults = {
     -- (no key here) on purpose -- ConfigureFromSaved() then leaves the DLL's
     -- ini-loaded Azure config alone instead of overwriting it on login.
     provider = "azure",
+    -- When the active provider is Azure and it fails with a rate limit
+    -- (429) or an auth/quota error (401 -- Azure's free F0 tier returns
+    -- this once the 2,000,000 char/month quota is used up), automatically
+    -- and temporarily switch to Google Free Translate (no key needed)
+    -- instead of dropping translations. See /wt fallback.
+    azureFallbackToGoogleFree = true,
     googleApiKey = "",
     azureApiKey = "",
     azureRegion = "",
@@ -103,26 +124,36 @@ local defaults = {
     debugMode = false,
     -- Outgoing translation settings
     outgoingEnabled = false,  -- Off by default
+    -- Only Say/Yell/Whisper translate by default (the channels you're most
+    -- likely to actually run into a foreign-language player in). Group
+    -- channels (Party/Guild/Raid/Battleground/World) default OFF since
+    -- those are usually your own guild or group. All of these are still
+    -- individually toggleable in the settings panel (/wt show).
     outgoingChannels = {
         WHISPER = true,
-        PARTY = true,
-        GUILD = true,
-        RAID = true,
         SAY = true,
         YELL = true,
-        BATTLEGROUND = true,
-        CHANNEL = true,
+        PARTY = false,
+        GUILD = false,
+        RAID = false,
+        BATTLEGROUND = false,
+        CHANNEL = false,
     },
     incomingChannels = {
         SAY = true,
         YELL = true,
         WHISPER = true,
-        PARTY = true,
-        GUILD = true,
-        RAID = true,
-        BATTLEGROUND = true,
-        CHANNEL = true,
+        PARTY = false,
+        GUILD = false,
+        RAID = false,
+        BATTLEGROUND = false,
     },
+    -- Per-channel-name toggles for custom/world channels (General, Trade,
+    -- LookingForGroup, World, English, etc). Keyed by the channel's plain
+    -- name; missing/unset = OFF, since the exact channel list is different
+    -- for every server and every player. Populated live from the channels
+    -- you've actually joined -- see the settings panel.
+    incomingChannelNames = {},
     outgoingPrefix = "[Translated by WoWTranslate]",
     incomingPrefix = "[WT]",
     -- RRGGBB (no leading "#", no alpha) used to color just the [WT]
@@ -943,7 +974,17 @@ local function HookChatFrames()
                 end
 
                 -- Check incoming channel filter
-                if currentIncomingChannel then
+                if currentIncomingChannel == "CHANNEL" then
+                    -- Custom/world channels (General, Trade, LookingForGroup,
+                    -- World, English, etc.) are filtered per channel name,
+                    -- not as one lumped bucket.
+                    local chName = currentIncomingChannelName
+                    local chNames = WoWTranslateDB.incomingChannelNames
+                    if not chName or not chNames or not chNames[chName] then
+                        frameOriginalAddMessage(self, text, r, g, b, id, holdTime)
+                        return
+                    end
+                elseif currentIncomingChannel then
                     local inChannels = WoWTranslateDB.incomingChannels
                     if inChannels and not inChannels[currentIncomingChannel] then
                         frameOriginalAddMessage(self, text, r, g, b, id, holdTime)
@@ -1218,6 +1259,38 @@ function WoWTranslate_SetIncomingChannelEnabled(channel, enabled)
         WoWTranslateDB.incomingChannels = {}
     end
     WoWTranslateDB.incomingChannels[channel] = enabled
+end
+
+-- Set per-name incoming toggle for a custom/world channel, e.g. "Trade"
+-- (called from config UI and /wt inchannel)
+function WoWTranslate_SetIncomingChannelNameEnabled(name, enabled)
+    if not name or name == "" then return end
+    if not WoWTranslateDB.incomingChannelNames then
+        WoWTranslateDB.incomingChannelNames = {}
+    end
+    WoWTranslateDB.incomingChannelNames[name] = enabled
+end
+
+-- Returns a list of {id, name, enabled} for every channel the player has
+-- joined right now, using the current incomingChannelNames setting.
+function WoWTranslate_GetJoinedChannels()
+    local result = {}
+    if not GetChannelName then return result end
+    -- GetChannelName(index) is unambiguous: pass a channel ID 1-20 and it
+    -- returns (id, name, isDisabled) for that ID if you've joined it, or
+    -- id == 0 if you haven't. This avoids relying on GetChannelList()'s
+    -- multi-return shape, which turned out not to be the flat id/name/
+    -- disabled triplets assumed here -- that mismatch was scrambling
+    -- names and IDs together in the settings panel (e.g. a channel
+    -- literally labeled "3").
+    for i = 1, 20 do
+        local id, name = GetChannelName(i)
+        if id and id ~= 0 and name and name ~= "" then
+            local enabled = WoWTranslateDB.incomingChannelNames and WoWTranslateDB.incomingChannelNames[name]
+            table.insert(result, { id = id, name = name, enabled = (enabled and true) or false })
+        end
+    end
+    return result
 end
 
 -- ============================================================================
@@ -1617,6 +1690,60 @@ SlashCmdList["WOWTRANSLATE"] = function(msg)
             DEFAULT_CHAT_FRAME:AddMessage("  Usage: /wt outchannel <WHISPER|PARTY|GUILD|RAID|SAY|YELL|BATTLEGROUND|CHANNEL>")
         end
 
+    elseif cmd == "fallback" then
+        if arg == "on" then
+            WoWTranslateDB.azureFallbackToGoogleFree = true
+            DEFAULT_CHAT_FRAME:AddMessage("[WoWTranslate] Azure -> Google Free fallback: |cFF00FF00ON|r")
+        elseif arg == "off" then
+            WoWTranslateDB.azureFallbackToGoogleFree = false
+            DEFAULT_CHAT_FRAME:AddMessage("[WoWTranslate] Azure -> Google Free fallback: |cFFFF0000OFF|r")
+        elseif arg == "reset" then
+            if WoWTranslate_API.ResetFallback then
+                WoWTranslate_API.ResetFallback()
+                DEFAULT_CHAT_FRAME:AddMessage("[WoWTranslate] Retrying Azure now (fallback cooldown cleared).")
+            end
+        else
+            local status = WoWTranslateDB.azureFallbackToGoogleFree and "|cFF00FF00ON|r" or "|cFFFF0000OFF|r"
+            DEFAULT_CHAT_FRAME:AddMessage("[WoWTranslate] Azure -> Google Free fallback: " .. status)
+            if WoWTranslate_API.IsFallbackActive and WoWTranslate_API.IsFallbackActive() then
+                local left = math.floor(WoWTranslate_API.GetFallbackSecondsLeft() or 0)
+                local mins = math.floor(left / 60)
+                DEFAULT_CHAT_FRAME:AddMessage("  Currently ACTIVE -- running on Google Free for another ~" .. mins .. " min")
+            end
+            DEFAULT_CHAT_FRAME:AddMessage("  Usage: /wt fallback on|off|reset")
+        end
+
+    elseif cmd == "inchannel" then
+        local joined = WoWTranslate_GetJoinedChannels()
+
+        if arg and arg ~= "" then
+            local found = nil
+            for _, ch in ipairs(joined) do
+                if string.lower(ch.name) == string.lower(arg) then
+                    found = ch
+                end
+            end
+            if found then
+                local newState = not found.enabled
+                WoWTranslate_SetIncomingChannelNameEnabled(found.name, newState)
+                local newStatus = newState and "|cFF00FF00ON|r" or "|cFFFF0000OFF|r"
+                DEFAULT_CHAT_FRAME:AddMessage("[WoWTranslate] Incoming " .. found.name .. ": " .. newStatus)
+            else
+                DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[WoWTranslate] You're not in a channel named '" .. arg .. "'|r")
+            end
+        else
+            if table.getn(joined) == 0 then
+                DEFAULT_CHAT_FRAME:AddMessage("[WoWTranslate] You're not in any custom/world channels right now.")
+            else
+                DEFAULT_CHAT_FRAME:AddMessage("[WoWTranslate] Incoming world/custom channel settings:")
+                for _, ch in ipairs(joined) do
+                    local status = ch.enabled and "|cFF00FF00ON|r" or "|cFFFF0000OFF|r"
+                    DEFAULT_CHAT_FRAME:AddMessage("  " .. ch.name .. ": " .. status)
+                end
+            end
+            DEFAULT_CHAT_FRAME:AddMessage("  Usage: /wt inchannel <name> - toggle one, e.g. /wt inchannel Trade")
+        end
+
     elseif cmd == "prefix" then
         if arg and arg ~= "" then
             WoWTranslateDB.outgoingPrefix = arg
@@ -1698,6 +1825,8 @@ SlashCmdList["WOWTRANSLATE"] = function(msg)
         DEFAULT_CHAT_FRAME:AddMessage("  -- Outgoing --")
         DEFAULT_CHAT_FRAME:AddMessage("  /wt outgoing on|off - Toggle outgoing translation")
         DEFAULT_CHAT_FRAME:AddMessage("  /wt outchannel [type] - Show/toggle channel settings")
+        DEFAULT_CHAT_FRAME:AddMessage("  /wt fallback [on|off|reset] - Auto-fallback to Google Free on Azure rate limit/quota")
+        DEFAULT_CHAT_FRAME:AddMessage("  /wt inchannel [name] - Show/toggle a joined world/custom channel, e.g. Trade")
         DEFAULT_CHAT_FRAME:AddMessage("  /wt prefix <text> - Set outgoing message prefix")
         DEFAULT_CHAT_FRAME:AddMessage("  /wt intag <text> - Set incoming tag (default [WT])")
         DEFAULT_CHAT_FRAME:AddMessage("  /wt tagcolor <RRGGBB> - Set incoming tag color (default 00FFFF)")
@@ -1755,6 +1884,15 @@ local function InitializeSettings()
         end
     end
 
+    -- Migration: the old lumped "CHANNEL" bucket is replaced by per-name
+    -- incomingChannelNames -- drop it so it doesn't linger unused.
+    if WoWTranslateDB.incomingChannels then
+        WoWTranslateDB.incomingChannels.CHANNEL = nil
+    end
+    if not WoWTranslateDB.incomingChannelNames then
+        WoWTranslateDB.incomingChannelNames = {}
+    end
+
     DEBUG_MODE = WoWTranslateDB.debugMode or false
 end
 
@@ -1790,8 +1928,14 @@ local function OnPlayerLogin()
     ChatFrame_OnEvent = function(event)
         currentIncomingChannel = EVENT_TO_CHANNEL[event]
         currentIsSystemEvent = SYSTEM_EVENTS[event] or false
+        if event == "CHAT_MSG_CHANNEL" then
+            currentIncomingChannelName = GetChannelBaseName(arg4)
+        else
+            currentIncomingChannelName = nil
+        end
         originalChatFrameOnEvent(event)
         currentIncomingChannel = nil
+        currentIncomingChannelName = nil
         currentIsSystemEvent = false
     end
 
