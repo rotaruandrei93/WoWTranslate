@@ -931,12 +931,19 @@ local function GlossaryPartialSubstitute(text)
                 local english = WoWTranslateGlossary[chinese]
                 local slot = table.getn(placeholders) + 1
                 placeholders[slot] = english
-                -- \2 (byte 0x02) is a control character that never
-                -- appears in normal chat text, so it's a safe,
-                -- collision-free placeholder delimiter. (Distinct from
-                -- the \1 hyperlink-style "http://ph.wt/N" placeholders
-                -- used elsewhere in the addon, so the two never collide.)
-                local placeholder = "\2" .. slot .. "\2"
+                -- URL-style placeholder, same scheme as the hyperlink
+                -- placeholders ("http://ph.wt/N") used elsewhere in this
+                -- addon -- translation APIs reliably preserve plain
+                -- printable-ASCII "URLs" through translation. An earlier
+                -- version of this used raw control byte 0x02 as a
+                -- delimiter; Azure silently sanitizes non-printable bytes
+                -- like that out of text it processes (typically replacing
+                -- each one with "?"), which meant the placeholder could
+                -- never be found and resolved afterward -- it came back
+                -- looking like "?1?" instead of the real glossary term.
+                -- Distinct "gl.wt" host (vs hyperlinks' "ph.wt") so the two
+                -- placeholder schemes never collide.
+                local placeholder = "http://gl.wt/" .. slot
                 working = ReplaceAllLiteral(working, chinese, placeholder)
                 hasMatch = true
             end
@@ -1026,38 +1033,41 @@ local function AppendWithBoundarySpace(out, chunk)
     return out .. chunk
 end
 
--- Resolves "\2N\2" placeholders (from WoWTranslate_CheckGlossaryProtected)
--- back to their real English text. Safe to call even if placeholders is
--- nil/empty (returns text unchanged). Adds a space at any boundary where a
--- resolved term would otherwise be smashed directly against an adjacent
--- English word or number - e.g. "STSM马队带奶,4=1能拉" resolving (after the
--- Chinese portions come back from the API as English too) to
--- "Stratholme horse team bring healer, LF1M can summon" instead of
--- "Stratholmehorse team bring healer,LF1Mcan summon".
+-- Resolves "http://gl.wt/N" placeholders (from
+-- WoWTranslate_CheckGlossaryProtected) back to their real English text.
+-- Safe to call even if placeholders is nil/empty (returns text unchanged).
+-- Adds a space at any boundary where a resolved term would otherwise be
+-- smashed directly against an adjacent English word or number - e.g.
+-- "STSM马队带奶,4=1能拉" resolving (after the Chinese portions come back from
+-- the API as English too) to "Stratholme horse team bring healer, LF1M can
+-- summon" instead of "Stratholmehorse team bring healer,LF1Mcan summon".
+--
+-- Tries a few defensive variants per slot (extra protocol, inserted space
+-- after the colon) the same way the hyperlink placeholder resolver
+-- elsewhere in this addon already does - translation APIs occasionally
+-- introduce small formatting quirks even in plain-ASCII "URLs" like these.
 function WoWTranslate_ResolveGlossaryPlaceholders(text, placeholders)
     if not placeholders or table.getn(placeholders) == 0 then
         return text
     end
 
-    local out = ""
-    local pos = 1
+    local out = text
 
-    while true do
-        local startPos, endPos, slotStr = string.find(text, "\2(%d+)\2", pos)
-        if not startPos then
-            out = AppendWithBoundarySpace(out, string.sub(text, pos))
-            break
+    for slot, english in pairs(placeholders) do
+        local variants = {
+            "http://gl.wt/" .. slot,
+            "https://gl.wt/" .. slot,
+            "http://gl .wt/" .. slot,
+            "http: //gl.wt/" .. slot,
+        }
+        for _, placeholder in ipairs(variants) do
+            local startPos, endPos = string.find(out, placeholder, 1, true)
+            if startPos then
+                local before = AppendWithBoundarySpace(string.sub(out, 1, startPos - 1), english)
+                out = AppendWithBoundarySpace(before, string.sub(out, endPos + 1))
+                break
+            end
         end
-
-        if startPos > pos then
-            out = AppendWithBoundarySpace(out, string.sub(text, pos, startPos - 1))
-        end
-
-        local slot = tonumber(slotStr)
-        local english = placeholders[slot] or string.sub(text, startPos, endPos)
-        out = AppendWithBoundarySpace(out, english)
-
-        pos = endPos + 1
     end
 
     return out
