@@ -76,8 +76,8 @@ end
 local configFrame = CreateFrame("Frame", "WoWTranslateConfigFrame", UIParent)
 configFrame:Hide()
 configFrame:SetWidth(440)
-configFrame:SetHeight(780) -- placeholder; recalculated to fit content at the bottom of the LAYOUT section below
-configFrame:SetPoint("CENTER", 0, 0)
+configFrame:SetHeight(780) -- placeholder; recalculated to fit content (see RefreshChannelList)
+configFrame:SetPoint("TOP", UIParent, "TOP", 0, -60)
 configFrame:SetMovable(true)
 configFrame:EnableMouse(true)
 configFrame:SetClampedToScreen(true)
@@ -118,17 +118,19 @@ configFrame.elements = {}
 -- ============================================================================
 -- UI HELPERS
 -- ============================================================================
-local function CreateHeader(text, yPos)
-    local header = configFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    header:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 25, yPos)
+local function CreateHeader(text, yPos, parent)
+    parent = parent or configFrame
+    local header = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    header:SetPoint("TOPLEFT", parent, "TOPLEFT", 25, yPos)
     header:SetText(text)
     header:SetTextColor(1, 0.82, 0)
     return header
 end
 
-local function CreateCheckbox(label, xPos, yPos, configKey, subKey)
-    local wrapper = CreateFrame("Frame", nil, configFrame)
-    wrapper:SetPoint("TOPLEFT", configFrame, "TOPLEFT", xPos, yPos)
+local function CreateCheckbox(label, xPos, yPos, configKey, subKey, parent)
+    parent = parent or configFrame
+    local wrapper = CreateFrame("Frame", nil, parent)
+    wrapper:SetPoint("TOPLEFT", parent, "TOPLEFT", xPos, yPos)
     wrapper:SetWidth(200)
     wrapper:SetHeight(24)
     wrapper.configKey = configKey
@@ -186,12 +188,13 @@ local function CreateCheckbox(label, xPos, yPos, configKey, subKey)
     return cb
 end
 
-local function CreateLangSelector(label, xPos, yPos, configKey, totalWidth)
+local function CreateLangSelector(label, xPos, yPos, configKey, totalWidth, parent)
     -- Single-row layout (label, arrows, display all inline) so every
     -- selector in the panel looks and behaves the same way.
+    parent = parent or configFrame
     totalWidth = totalWidth or 170
-    local frame = CreateFrame("Frame", nil, configFrame)
-    frame:SetPoint("TOPLEFT", configFrame, "TOPLEFT", xPos, yPos)
+    local frame = CreateFrame("Frame", nil, parent)
+    frame:SetPoint("TOPLEFT", parent, "TOPLEFT", xPos, yPos)
     frame:SetWidth(totalWidth)
     frame:SetHeight(26)
 
@@ -285,41 +288,108 @@ configFrame.elements.inChGuild = CreateCheckbox("Guild", 140, y, "incomingChanne
 configFrame.elements.inChRaid = CreateCheckbox("Raid", 255, y, "incomingChannels", "RAID")
 y = y - 26
 configFrame.elements.inChBG = CreateCheckbox("Battleground", 25, y, "incomingChannels", "BATTLEGROUND")
-configFrame.elements.inChChannel = CreateCheckbox("World/Local", 165, y, "incomingChannels", "CHANNEL")
 
-y = y - 34
-CreateHeader("Outgoing Translation (You -> Chat)", y)
-y = y - 26
-configFrame.elements.outEnabled = CreateCheckbox("Enable Outgoing", 25, y, "outgoingEnabled", nil)
-y = y - 30
-configFrame.elements.outFrom = CreateLangSelector("From:", 25, y, "outgoingFromLang", 175)
-configFrame.elements.outTo = CreateLangSelector("To:", 210, y, "outgoingToLang", 175)
-
+-- ============================================================================
+-- WORLD/CUSTOM CHANNELS (dynamic -- General, Trade, LookingForGroup, World,
+-- English, Guild Recruitment, etc. depend entirely on the server and which
+-- channels you've joined, so this list is rebuilt every time the panel
+-- opens instead of being hard-coded like the checkboxes above).
+-- ============================================================================
 y = y - 28
-local chLabel = configFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-chLabel:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 25, y)
+local worldChLabel = configFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+worldChLabel:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 25, y)
+worldChLabel:SetText("Incoming World/Custom Channels:")
+y = y - 18
+local worldChHint = configFrame:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+worldChHint:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 25, y)
+worldChHint:SetText("(from channels you've joined -- reopen this panel after joining a new one)")
+y = y - 22
+
+local CHANNEL_POOL_SIZE = 10
+local CHANNEL_ROW_HEIGHT = 26
+local channelCheckboxes = {}
+local channelPoolStartY = y  -- y of the pool's first row; everything below
+                              -- this reflows based on how many rows are
+                              -- actually used (see RefreshChannelList), so
+                              -- unused rows don't leave a dead gap before
+                              -- "Outgoing Translation".
+
+for i = 1, CHANNEL_POOL_SIZE do
+    local col = mod(i - 1, 2)
+    local row = math.floor((i - 1) / 2)
+    local xPos = 25 + (col * 200)
+    local rowY = channelPoolStartY - (row * CHANNEL_ROW_HEIGHT)
+
+    local wrapper = CreateFrame("Frame", nil, configFrame)
+    wrapper:SetPoint("TOPLEFT", configFrame, "TOPLEFT", xPos, rowY)
+    wrapper:SetWidth(190)
+    wrapper:SetHeight(24)
+    wrapper:Hide()
+
+    local cb = CreateFrame("CheckButton", nil, wrapper, "UICheckButtonTemplate")
+    cb:SetPoint("TOPLEFT", 0, 0)
+
+    local text = wrapper:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    text:SetPoint("LEFT", cb, "RIGHT", 4, 0)
+
+    cb:SetScript("OnClick", function()
+        local w = this:GetParent()
+        local chName = w.channelName
+        if not chName then return end
+        local enabled = (this:GetChecked() and true) or false
+        WoWTranslate_SetIncomingChannelNameEnabled(chName, enabled)
+        if not WoWTranslate_TempConfig.incomingChannelNames then
+            WoWTranslate_TempConfig.incomingChannelNames = {}
+        end
+        WoWTranslate_TempConfig.incomingChannelNames[chName] = enabled
+    end)
+
+    channelCheckboxes[i] = { wrapper = wrapper, cb = cb, text = text }
+end
+
+-- ============================================================================
+-- OUTGOING TRANSLATION (its own container, built once, so the whole
+-- section -- header, checkboxes, Clear Cache/Save buttons -- can be moved
+-- as a single unit once RefreshChannelList knows how many World/Custom
+-- Channel rows are actually in use above it.)
+-- ============================================================================
+local outgoingSection = CreateFrame("Frame", nil, configFrame)
+outgoingSection:SetWidth(400)
+
+local sy = 0  -- layout cursor local to outgoingSection (0 = its own top edge)
+CreateHeader("Outgoing Translation (You -> Chat)", sy, outgoingSection)
+sy = sy - 26
+configFrame.elements.outEnabled = CreateCheckbox("Enable Outgoing", 25, sy, "outgoingEnabled", nil, outgoingSection)
+sy = sy - 30
+configFrame.elements.outFrom = CreateLangSelector("From:", 25, sy, "outgoingFromLang", 175, outgoingSection)
+configFrame.elements.outTo = CreateLangSelector("To:", 210, sy, "outgoingToLang", 175, outgoingSection)
+
+sy = sy - 28
+local chLabel = outgoingSection:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+chLabel:SetPoint("TOPLEFT", outgoingSection, "TOPLEFT", 25, sy)
 chLabel:SetText("Outgoing Channels:")
-y = y - 26
-configFrame.elements.chWhisper = CreateCheckbox("Whisper", 25, y, "outgoingChannels", "WHISPER")
-configFrame.elements.chParty = CreateCheckbox("Party", 140, y, "outgoingChannels", "PARTY")
-configFrame.elements.chSay = CreateCheckbox("Say", 255, y, "outgoingChannels", "SAY")
-y = y - 26
-configFrame.elements.chGuild = CreateCheckbox("Guild", 25, y, "outgoingChannels", "GUILD")
-configFrame.elements.chRaid = CreateCheckbox("Raid", 140, y, "outgoingChannels", "RAID")
-configFrame.elements.chYell = CreateCheckbox("Yell", 255, y, "outgoingChannels", "YELL")
-y = y - 26
-configFrame.elements.chBG = CreateCheckbox("Battleground", 25, y, "outgoingChannels", "BATTLEGROUND")
-configFrame.elements.chChannel = CreateCheckbox("World/Local", 165, y, "outgoingChannels", "CHANNEL")
+sy = sy - 26
+configFrame.elements.chWhisper = CreateCheckbox("Whisper", 25, sy, "outgoingChannels", "WHISPER", outgoingSection)
+configFrame.elements.chParty = CreateCheckbox("Party", 140, sy, "outgoingChannels", "PARTY", outgoingSection)
+configFrame.elements.chSay = CreateCheckbox("Say", 255, sy, "outgoingChannels", "SAY", outgoingSection)
+sy = sy - 26
+configFrame.elements.chGuild = CreateCheckbox("Guild", 25, sy, "outgoingChannels", "GUILD", outgoingSection)
+configFrame.elements.chRaid = CreateCheckbox("Raid", 140, sy, "outgoingChannels", "RAID", outgoingSection)
+configFrame.elements.chYell = CreateCheckbox("Yell", 255, sy, "outgoingChannels", "YELL", outgoingSection)
+sy = sy - 26
+configFrame.elements.chBG = CreateCheckbox("Battleground", 25, sy, "outgoingChannels", "BATTLEGROUND", outgoingSection)
+configFrame.elements.chChannel = CreateCheckbox("World/Local", 165, sy, "outgoingChannels", "CHANNEL", outgoingSection)
 
 -- Reserve room for the bottom Clear Cache / Save buttons. The checkbox
 -- template itself renders taller (~32px) than the 24px row spacing used
 -- between checkbox rows, so the last row needs extra clearance here or it
--- visually overlaps the buttons below it — that's what was happening.
-y = y - 34 - 54
-configFrame:SetHeight(math.abs(y))
+-- visually overlaps the buttons below it.
+sy = sy - 34 - 54
+local OUTGOING_SECTION_HEIGHT = math.abs(sy)
+outgoingSection:SetHeight(OUTGOING_SECTION_HEIGHT)
 
-local clearBtn = CreateFrame("Button", nil, configFrame, "UIPanelButtonTemplate")
-clearBtn:SetPoint("BOTTOMLEFT", configFrame, "BOTTOMLEFT", 25, 20)
+local clearBtn = CreateFrame("Button", nil, outgoingSection, "UIPanelButtonTemplate")
+clearBtn:SetPoint("BOTTOMLEFT", outgoingSection, "BOTTOMLEFT", 25, 20)
 clearBtn:SetWidth(120)
 clearBtn:SetHeight(26)
 clearBtn:SetText("Clear Cache")
@@ -330,8 +400,8 @@ clearBtn:SetScript("OnClick", function()
     end
 end)
 
-local saveBtn = CreateFrame("Button", nil, configFrame, "UIPanelButtonTemplate")
-saveBtn:SetPoint("BOTTOMRIGHT", configFrame, "BOTTOMRIGHT", -25, 20)
+local saveBtn = CreateFrame("Button", nil, outgoingSection, "UIPanelButtonTemplate")
+saveBtn:SetPoint("BOTTOMRIGHT", outgoingSection, "BOTTOMRIGHT", -25, 20)
 saveBtn:SetWidth(80)
 saveBtn:SetHeight(26)
 saveBtn:SetText("Save")
@@ -340,6 +410,42 @@ saveBtn:SetScript("OnClick", function()
     DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00[WoWTranslate] Settings saved|r")
     configFrame:Hide()
 end)
+
+-- Fills the checkbox pool from the channels currently joined, then
+-- collapses the dead space: the World/Custom Channels area and everything
+-- below it (Outgoing Translation + buttons) only take up as much room as
+-- the ACTUAL joined-channel count needs, not the full 10-slot pool.
+local function RefreshChannelList()
+    local joined = {}
+    if WoWTranslate_GetJoinedChannels then
+        joined = WoWTranslate_GetJoinedChannels()
+    end
+
+    local shownCount = 0
+    for i = 1, CHANNEL_POOL_SIZE do
+        local entry = channelCheckboxes[i]
+        local ch = joined[i]
+        if ch then
+            entry.wrapper.channelName = ch.name
+            entry.text:SetText(ch.name)
+            local cfg = WoWTranslate_TempConfig.incomingChannelNames or {}
+            entry.cb:SetChecked(cfg[ch.name])
+            entry.wrapper:Show()
+            shownCount = i
+        else
+            entry.wrapper.channelName = nil
+            entry.wrapper:Hide()
+        end
+    end
+
+    local usedRows = math.ceil(shownCount / 2)
+    local outgoingY = channelPoolStartY - (usedRows * CHANNEL_ROW_HEIGHT) - 6
+
+    outgoingSection:ClearAllPoints()
+    outgoingSection:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 0, outgoingY)
+
+    configFrame:SetHeight(math.abs(outgoingY) + OUTGOING_SECTION_HEIGHT)
+end
 
 local function RefreshUI()
     local e = configFrame.elements
@@ -371,7 +477,6 @@ local function RefreshUI()
     if e.inChGuild then e.inChGuild:SetChecked(inCh.GUILD) end
     if e.inChRaid then e.inChRaid:SetChecked(inCh.RAID) end
     if e.inChBG then e.inChBG:SetChecked(inCh.BATTLEGROUND) end
-    if e.inChChannel then e.inChChannel:SetChecked(inCh.CHANNEL) end
 
     local ch = cfg.outgoingChannels or {}
     if e.chWhisper then e.chWhisper:SetChecked(ch.WHISPER) end
@@ -382,6 +487,8 @@ local function RefreshUI()
     if e.chYell then e.chYell:SetChecked(ch.YELL) end
     if e.chBG then e.chBG:SetChecked(ch.BATTLEGROUND) end
     if e.chChannel then e.chChannel:SetChecked(ch.CHANNEL) end
+
+    RefreshChannelList()
 end
 
 -- Lets other files (e.g. the minimap button) refresh this panel's
