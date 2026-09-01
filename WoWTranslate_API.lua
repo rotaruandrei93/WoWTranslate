@@ -22,6 +22,27 @@ local POLL_INTERVAL = 0.1
 local REQUEST_TIMEOUT = 30
 
 -- ============================================================================
+-- AZURE -> GOOGLE FREE FALLBACK
+-- ============================================================================
+-- The DLL only ever has ONE provider configured at a time, so "fallback"
+-- means: on a rate-limit or quota-exhausted error from Azure, reconfigure
+-- the DLL to Google Free, silently retry that one translation, and keep
+-- using Google Free for a cooldown period before trying Azure again
+-- (rather than hammering Azure on every single message).
+--
+-- Two different cooldowns because the two triggers behave very differently:
+--   - HTTP 429 (rate limit) usually clears within seconds/minutes.
+--   - HTTP 401 can also mean the free-tier (F0) 2,000,000 char/month quota
+--     is exhausted -- Azure returns "credentials are missing or invalid"
+--     for this too, and that won't clear until the next billing cycle.
+--     401 CAN also mean a genuinely bad/rotated key, which is why this is
+--     paired with /wt fallback reset for a manual immediate retry.
+local FALLBACK_COOLDOWN_SHORT = 300    -- 5 min, for HTTP 429
+local FALLBACK_COOLDOWN_LONG = 21600   -- 6 hours, for HTTP 401 (quota or bad key)
+local fallbackActive = false
+local fallbackUntil = 0
+
+-- ============================================================================
 -- LUA 5.0 COMPATIBILITY
 -- ============================================================================
 local function strsplit(delimiter, text, limit)
@@ -437,6 +458,110 @@ local function OnRequestCompleted()
 end
 
 -- ============================================================================
+-- AZURE -> GOOGLE FREE FALLBACK (continued)
+-- ============================================================================
+local function FallbackEnabled()
+    return WoWTranslateDB and WoWTranslateDB.provider == "azure"
+        and WoWTranslateDB.azureFallbackToGoogleFree
+end
+
+-- Looks at the DLL's numeric lastHttpStatus (most reliable) or, failing
+-- that, common wording in the error text, and classifies the failure so
+-- the caller can pick a cooldown. Returns "rate_limit", "quota_or_auth",
+-- or nil (not a fallback-worthy error).
+local function ClassifyProviderError(errText)
+    local status = WoWTranslate_API.GetProviderStatus()
+    local httpStatus = status and status.lastHttpStatus or 0
+
+    if httpStatus == 429 then return "rate_limit" end
+    if httpStatus == 401 then return "quota_or_auth" end
+
+    if errText then
+        local lower = string.lower(errText)
+        if string.find(lower, "429", 1, true)
+            or string.find(lower, "rate limit", 1, true)
+            or string.find(lower, "too many requests", 1, true) then
+            return "rate_limit"
+        end
+        if string.find(lower, "401", 1, true)
+            or string.find(lower, "credentials are missing or invalid", 1, true)
+            or string.find(lower, "quota", 1, true) then
+            return "quota_or_auth"
+        end
+    end
+
+    return nil
+end
+
+local function ActivateFallback(cooldown)
+    cooldown = cooldown or FALLBACK_COOLDOWN_SHORT
+    fallbackUntil = GetTime() + cooldown
+    if fallbackActive then return end
+    fallbackActive = true
+    WoWTranslate_API.ConfigureGoogleFree()
+    if DEFAULT_CHAT_FRAME then
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFFFFF00[WoWTranslate] Azure unavailable (rate limit or quota) -- falling back to Google Free. Run /wt fallback to check, or /wt fallback reset to retry Azure now.|r")
+    end
+end
+
+-- Called before queuing a new request: if the fallback cooldown has
+-- expired, switch the DLL back to the real configured provider (Azure).
+local function CheckFallbackExpiry()
+    if fallbackActive and GetTime() >= fallbackUntil then
+        fallbackActive = false
+        WoWTranslate_API.ConfigureFromSaved(true)
+        if DEFAULT_CHAT_FRAME then
+            DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00[WoWTranslate] Retrying Azure translation (fallback cooldown ended).|r")
+        end
+    end
+end
+
+function WoWTranslate_API.IsFallbackActive()
+    return fallbackActive
+end
+
+function WoWTranslate_API.GetFallbackSecondsLeft()
+    if not fallbackActive then return 0 end
+    local left = fallbackUntil - GetTime()
+    if left < 0 then return 0 end
+    return left
+end
+
+-- Manual override: force an immediate retry of the real provider, ignoring
+-- whatever's left of the cooldown. Useful right after fixing a key/region.
+function WoWTranslate_API.ResetFallback()
+    fallbackActive = false
+    fallbackUntil = 0
+    WoWTranslate_API.ConfigureFromSaved(true)
+end
+
+-- Re-queues a failed request's exact text/langs through Google Free
+-- instead of surfacing the error. Returns true if the retry was queued
+-- (caller should NOT call the original callback -- it'll fire once the
+-- retry itself resolves).
+local function RetryWithGoogleFree(req, cooldown)
+    ActivateFallback(cooldown)
+
+    requestCounter = requestCounter + 1
+    local retryId = "fb_" .. tostring(requestCounter)
+
+    local success, result = pcall(function()
+        return UnitXP("WoWTranslate", "translate_async", retryId, req.text, req.fromLang, req.toLang)
+    end)
+
+    if not success then return false end
+
+    local ok = ParseBridgeResult(result)
+    if not ok then return false end
+
+    req.retried = true
+    req.timestamp = GetTime()
+    pendingRequests[retryId] = req
+    OnRequestQueued()
+    return true
+end
+
+-- ============================================================================
 -- TRANSLATION FUNCTIONS
 -- ============================================================================
 function WoWTranslate_API.Translate(text, callback)
@@ -450,17 +575,23 @@ function WoWTranslate_API.Translate(text, callback)
         return false
     end
 
+    CheckFallbackExpiry()
+
     requestCounter = requestCounter + 1
     local requestId = tostring(requestCounter)
+
+    local fromLang = WoWTranslateDB and WoWTranslateDB.incomingFromLang or "zh"
+    local toLang = WoWTranslateDB and WoWTranslateDB.incomingToLang or "en"
 
     pendingRequests[requestId] = {
         callback = callback,
         text = text,
+        fromLang = fromLang,
+        toLang = toLang,
+        retried = false,
         timestamp = GetTime()
     }
 
-    local fromLang = WoWTranslateDB and WoWTranslateDB.incomingFromLang or "zh"
-    local toLang = WoWTranslateDB and WoWTranslateDB.incomingToLang or "en"
     local success, result = pcall(function()
         return UnitXP("WoWTranslate", "translate_async", requestId, text, fromLang, toLang)
     end)
@@ -503,7 +634,18 @@ local function PollTranslations()
             pendingRequests[requestId] = nil
             OnRequestCompleted()
 
-            if req.callback then
+            local errKind = (err ~= "" and not req.retried and FallbackEnabled())
+                and ClassifyProviderError(err) or nil
+
+            if errKind then
+                local cooldown = (errKind == "rate_limit") and FALLBACK_COOLDOWN_SHORT or FALLBACK_COOLDOWN_LONG
+                if not RetryWithGoogleFree(req, cooldown) then
+                    -- Couldn't even queue the retry -- fall through to a normal failure
+                    lastError = err
+                    if req.callback then req.callback(nil, err) end
+                end
+                -- else: stay quiet, the retry's own poll result will fire the callback
+            elseif req.callback then
                 if err ~= "" then
                     lastError = err
                     req.callback(nil, err)
@@ -564,17 +706,23 @@ function WoWTranslate_API.TranslateOutgoing(text, callback)
         return false
     end
 
+    CheckFallbackExpiry()
+
     requestCounter = requestCounter + 1
     local requestId = "out_" .. tostring(requestCounter)
+
+    local fromLang = WoWTranslateDB and WoWTranslateDB.outgoingFromLang or "en"
+    local toLang = WoWTranslateDB and WoWTranslateDB.outgoingToLang or "zh"
 
     pendingRequests[requestId] = {
         callback = callback,
         text = text,
+        fromLang = fromLang,
+        toLang = toLang,
+        retried = false,
         timestamp = GetTime()
     }
 
-    local fromLang = WoWTranslateDB and WoWTranslateDB.outgoingFromLang or "en"
-    local toLang = WoWTranslateDB and WoWTranslateDB.outgoingToLang or "zh"
     local success, result = pcall(function()
         return UnitXP("WoWTranslate", "translate_async", requestId, text, fromLang, toLang)
     end)
